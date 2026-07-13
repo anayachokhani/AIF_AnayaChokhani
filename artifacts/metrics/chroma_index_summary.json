@@ -1,0 +1,25 @@
+{
+  "catalogue_path": "data/curated/abo_mvp_catalogue_with_images.csv",
+  "chroma_path": "data/vectorstores/chroma",
+  "collection": "formaos_catalogue_v1",
+  "input_rows": 180,
+  "indexed_count": 180,
+  "embedding": "local_hashing_embedding_v1",
+  "searchable_fields": [
+    "title",
+    "category",
+    "material",
+    "color",
+    "style_text",
+    "pattern",
+    "description"
+  ],
+  "smoke_report": "artifacts/metrics/retrieval_smoke_report.json",
+  "validation_status": "PASS",
+  "validation": {
+    "smoke_query_count": 10,
+    "queries_with_results": 10,
+    "filter_failures": [],
+    "passed": true
+  }
+}

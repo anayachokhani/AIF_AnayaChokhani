@@ -1,0 +1,21 @@
+{
+  "systems": {
+    "baseline_ungrounded": {
+      "briefs_evaluated": 10,
+      "passed_designs": 0,
+      "fit_rate": 0.0,
+      "budget_accuracy": 1.0,
+      "sourceability": 0.0,
+      "vastu_compliance": 0.0
+    },
+    "formaos": {
+      "briefs_evaluated": 10,
+      "passed_designs": 6,
+      "fit_rate": 0.6,
+      "budget_accuracy": 1.0,
+      "sourceability": 1.0,
+      "vastu_compliance": 1.0
+    }
+  },
+  "metric_definitions": "data/eval/metric_definitions.json"
+}

@@ -1,0 +1,13 @@
+{
+  "total_rules": 30,
+  "duplicate_rule_ids": [],
+  "missing_fields": [],
+  "invalid_room_types": 0,
+  "invalid_object_classes": 0,
+  "invalid_zones": 0,
+  "invalid_colors": 0,
+  "missing_rationales": 0,
+  "missing_source_urls": 0,
+  "invalid_confidence_values": 0,
+  "invalid_severity_values": 0
+}

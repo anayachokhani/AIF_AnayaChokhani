@@ -1,0 +1,35 @@
+{
+  "schema_id": "formaos_eval_output_v1",
+  "frozen": true,
+  "required_top_level_fields": [
+    "brief_id",
+    "system",
+    "status",
+    "selected_items",
+    "total_price_inr",
+    "fit_notes",
+    "budget_notes",
+    "sourceability_notes",
+    "vastu_notes",
+    "failure_reason"
+  ],
+  "systems": ["formaos", "baseline_ungrounded"],
+  "status_values": ["passed", "failed", "partial"],
+  "selected_item_fields": [
+    "slot_id",
+    "category",
+    "item_id",
+    "title",
+    "width_cm",
+    "depth_cm",
+    "height_cm",
+    "price_inr",
+    "image_path",
+    "source_dataset",
+    "estimated"
+  ],
+  "notes": {
+    "formaos": "item_id must be a real curated catalogue ID when status is passed.",
+    "baseline_ungrounded": "item_id and image_path must remain null; estimated must be true for dimensions or prices."
+  }
+}

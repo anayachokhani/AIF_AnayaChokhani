@@ -1,0 +1,30 @@
+[project]
+name = "formaos-backend"
+version = "0.1.0"
+description = "Backend contracts and agent loop for the FormaOS MVP."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  "python-dotenv",
+  "httpx",
+  "langgraph",
+  "langchain",
+  "chromadb",
+  "pandas",
+  "numpy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

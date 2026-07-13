@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "total_briefs": 10,
+  "unique_brief_ids": true,
+  "coverage": {
+    "living_room": 5,
+    "bedroom": 3,
+    "study": 2,
+    "small_budgets": 3,
+    "large_budgets": 2,
+    "vastu_on": 5,
+    "vastu_off": 5,
+    "impossible_constraints": 2,
+    "metric_units": 1
+  },
+  "baseline_defined": true,
+  "common_output_schema_defined": true,
+  "metric_definitions_defined": ["fit_rate", "budget_accuracy", "sourceability", "vastu_compliance"],
+  "frozen_before_metrics": true,
+  "validation_errors": []
+}

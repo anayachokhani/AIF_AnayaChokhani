@@ -1,0 +1,38 @@
+{
+  "metric_set_id": "formaos_mvp_metrics_v1",
+  "frozen": true,
+  "metrics": [
+    {
+      "id": "fit_rate",
+      "name": "Fit rate",
+      "definition": "The share of selected items whose width_cm and depth_cm satisfy the room or slot constraints used during grounding.",
+      "numerator": "selected items passing hard dimension checks",
+      "denominator": "all selected items with a required furniture slot",
+      "higher_is_better": true
+    },
+    {
+      "id": "budget_accuracy",
+      "name": "Budget accuracy",
+      "definition": "The share of designs whose selected item total_price_inr is less than or equal to the user's budget_inr.",
+      "numerator": "designs with total_price_inr <= budget_inr",
+      "denominator": "all evaluated briefs that produce a comparable output",
+      "higher_is_better": true
+    },
+    {
+      "id": "sourceability",
+      "name": "Sourceability",
+      "definition": "The share of selected items that map to real curated catalogue entries with stable item_id values.",
+      "numerator": "selected items whose item_id exists in data/curated/abo_mvp_catalogue.csv",
+      "denominator": "all selected items",
+      "higher_is_better": true
+    },
+    {
+      "id": "vastu_compliance",
+      "name": "Optional Vastu compliance",
+      "definition": "For briefs where vastu_enabled is true, the share of applicable deterministic Vastu rule checks that pass or warn without hard failure.",
+      "numerator": "applicable Vastu checks with pass or warn status",
+      "denominator": "all applicable Vastu checks for Vastu-enabled briefs",
+      "higher_is_better": true
+    }
+  ]
+}

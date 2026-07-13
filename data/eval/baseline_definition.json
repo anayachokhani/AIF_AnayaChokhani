@@ -1,0 +1,24 @@
+{
+  "baseline_id": "ungrounded_llm_item_list_v1",
+  "frozen": true,
+  "frozen_at": "2026-07-11T00:00:00Z",
+  "description": "Ungrounded LLM-style interior design list. It may recommend plausible furniture categories and prose, but it must not use the curated catalogue, Chroma retrieval, ABO item IDs, local product images, validated dimensions, hard budget filters, or Vastu rules.",
+  "allowed_inputs": ["room_type", "width", "depth", "units", "budget_inr", "style_words", "constraints", "vastu_enabled", "main_door_direction", "compass_direction"],
+  "prohibited_capabilities": [
+    "catalogue item lookup",
+    "ABO item_id selection",
+    "Chroma retrieval",
+    "hard dimension filtering",
+    "hard price filtering",
+    "Vastu JSON rule execution",
+    "product image mapping"
+  ],
+  "output_policy": {
+    "item_id": "must be null",
+    "source_dataset": "baseline_ungrounded",
+    "image_path": "must be null",
+    "dimensions": "may be estimated and must be marked estimated",
+    "price_inr": "may be estimated and must be marked estimated"
+  },
+  "comparison_note": "FormaOS and baseline outputs are converted into data/eval/output_schema.json before metric calculation."
+}

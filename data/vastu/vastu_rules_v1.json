@@ -1,0 +1,740 @@
+{
+  "version": "v1",
+  "guidance_mode": "opt_in",
+  "disclaimer": "Vastu rules in FormaOS are optional traditional guidance for users who request it; they are not scientific, architectural, safety, legal, or guaranteed outcome claims.",
+  "rules": [
+    {
+      "rule_id": "VR-001",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "sofa",
+      "preferred_zones": [
+        "S",
+        "W"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "earth",
+        "cream",
+        "green"
+      ],
+      "avoided_colors": [
+        "black"
+      ],
+      "severity": "warn",
+      "rationale": "Traditional guidance often places heavier seating along south or west so the room remains open to north and east light.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.62
+    },
+    {
+      "rule_id": "VR-002",
+      "perspective": "orientation",
+      "room_type": "living_room",
+      "object_class": "sofa",
+      "preferred_zones": [
+        "N",
+        "E"
+      ],
+      "avoided_zones": [
+        "S",
+        "W"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Seating is commonly preferred so occupants face north or east during conversation and receiving guests.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.58
+    },
+    {
+      "rule_id": "VR-003",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "loveseat",
+      "preferred_zones": [
+        "S",
+        "W"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "earth",
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "A compact secondary seat follows the same traditional heavy-furniture preference as larger living-room seating.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.56
+    },
+    {
+      "rule_id": "VR-004",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "table",
+      "preferred_zones": [
+        "C",
+        "N",
+        "E"
+      ],
+      "avoided_zones": [
+        "SW"
+      ],
+      "preferred_colors": [
+        "wood",
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Light central or north-east table placement is treated as acceptable when it does not block circulation.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.55
+    },
+    {
+      "rule_id": "VR-005",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "rug",
+      "preferred_zones": [
+        "C"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "earth",
+        "green",
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "A central rug can define the Brahmasthana-adjacent activity area while keeping furniture visually organized.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.52
+    },
+    {
+      "rule_id": "VR-006",
+      "perspective": "clearance",
+      "room_type": "living_room",
+      "object_class": "rug",
+      "preferred_zones": [
+        "C"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "cream",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Traditional layouts keep the central zone visually calm and avoid using floor coverings to justify cluttered circulation.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.5
+    },
+    {
+      "rule_id": "VR-007",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "storage",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "wood",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Heavier storage is traditionally placed toward south, west, or south-west and kept away from north-east.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.66
+    },
+    {
+      "rule_id": "VR-008",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "cabinet",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "wood",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Cabinets are treated as heavy objects and are therefore preferred in south, west, or south-west zones.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.65
+    },
+    {
+      "rule_id": "VR-009",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "lamp",
+      "preferred_zones": [
+        "SE",
+        "S"
+      ],
+      "avoided_zones": [
+        "NW"
+      ],
+      "preferred_colors": [
+        "warm white",
+        "gold",
+        "yellow"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Fire and warm-light objects are commonly associated with the south-east zone in popular Vastu practice.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.6
+    },
+    {
+      "rule_id": "VR-010",
+      "perspective": "color",
+      "room_type": "living_room",
+      "object_class": "lamp",
+      "preferred_zones": [
+        "SE"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "warm white",
+        "yellow",
+        "gold"
+      ],
+      "avoided_colors": [
+        "blue"
+      ],
+      "severity": "info",
+      "rationale": "Warm lighting colors are preferred for social rooms when the user asks for Vastu guidance.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.48
+    },
+    {
+      "rule_id": "VR-011",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "mirror",
+      "preferred_zones": [
+        "N",
+        "E"
+      ],
+      "avoided_zones": [
+        "S",
+        "SW"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Mirrors are commonly preferred on north or east walls and avoided in heavier south-west zones.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.6
+    },
+    {
+      "rule_id": "VR-012",
+      "perspective": "placement",
+      "room_type": "living_room",
+      "object_class": "planter",
+      "preferred_zones": [
+        "N",
+        "E",
+        "NE"
+      ],
+      "avoided_zones": [
+        "SW"
+      ],
+      "preferred_colors": [
+        "green"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Plants are treated as light natural elements and commonly preferred toward north, east, or north-east.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.57
+    },
+    {
+      "rule_id": "VR-013",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "bed",
+      "preferred_zones": [
+        "SW"
+      ],
+      "avoided_zones": [
+        "S",
+        "SE"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "critical",
+      "rationale": "Beds are commonly placed in the south-west of a bedroom in traditional home-layout guidance.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.68
+    },
+    {
+      "rule_id": "VR-014",
+      "perspective": "orientation",
+      "room_type": "bedroom",
+      "object_class": "bed",
+      "preferred_zones": [
+        "S",
+        "E"
+      ],
+      "avoided_zones": [
+        "N"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Sleep orientation guidance commonly avoids a north-facing head position and prefers south or east.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.57
+    },
+    {
+      "rule_id": "VR-015",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "storage",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "wood",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Wardrobes and heavy bedroom storage are traditionally preferred along south or west walls.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.64
+    },
+    {
+      "rule_id": "VR-016",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "cabinet",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "wood",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Bedroom cabinets are treated as heavy storage and are kept away from the north-east zone.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.62
+    },
+    {
+      "rule_id": "VR-017",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "mirror",
+      "preferred_zones": [
+        "N",
+        "E"
+      ],
+      "avoided_zones": [
+        "SW",
+        "S"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "critical",
+      "rationale": "Traditional bedroom guidance often avoids mirrors facing the bed or occupying south-west heavy zones.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.56
+    },
+    {
+      "rule_id": "VR-018",
+      "perspective": "color",
+      "room_type": "bedroom",
+      "object_class": "bed",
+      "preferred_zones": [
+        "SW"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "cream",
+        "earth",
+        "green"
+      ],
+      "avoided_colors": [
+        "red",
+        "black"
+      ],
+      "severity": "info",
+      "rationale": "Calmer earth and light colors are commonly preferred in bedroom guidance over aggressive dark or red schemes.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.5
+    },
+    {
+      "rule_id": "VR-019",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "lamp",
+      "preferred_zones": [
+        "SE",
+        "S"
+      ],
+      "avoided_zones": [
+        "NW"
+      ],
+      "preferred_colors": [
+        "warm white",
+        "yellow"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Bedroom lamps can use the same warm-light south-east association while keeping glare away from sleep areas.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.53
+    },
+    {
+      "rule_id": "VR-020",
+      "perspective": "placement",
+      "room_type": "bedroom",
+      "object_class": "table",
+      "preferred_zones": [
+        "N",
+        "E",
+        "NE"
+      ],
+      "avoided_zones": [
+        "SW"
+      ],
+      "preferred_colors": [
+        "wood",
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Bedside or reading tables are lighter objects and can sit in north, east, or north-east when practical.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.5
+    },
+    {
+      "rule_id": "VR-021",
+      "perspective": "placement",
+      "room_type": "study",
+      "object_class": "desk",
+      "preferred_zones": [
+        "E",
+        "N",
+        "NE"
+      ],
+      "avoided_zones": [
+        "SW"
+      ],
+      "preferred_colors": [
+        "wood",
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Study desks are commonly oriented to support work facing east or north when the room allows.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.61
+    },
+    {
+      "rule_id": "VR-022",
+      "perspective": "orientation",
+      "room_type": "study",
+      "object_class": "chair",
+      "preferred_zones": [
+        "E",
+        "N"
+      ],
+      "avoided_zones": [
+        "S",
+        "W"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Study seating is commonly preferred so the user faces north or east while working.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.58
+    },
+    {
+      "rule_id": "VR-023",
+      "perspective": "placement",
+      "room_type": "study",
+      "object_class": "storage",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [
+        "NE"
+      ],
+      "preferred_colors": [
+        "wood",
+        "earth"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Bookcases and document storage are heavy study objects and are preferred in south or west zones.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.6
+    },
+    {
+      "rule_id": "VR-024",
+      "perspective": "placement",
+      "room_type": "study",
+      "object_class": "lamp",
+      "preferred_zones": [
+        "SE",
+        "E"
+      ],
+      "avoided_zones": [
+        "NW"
+      ],
+      "preferred_colors": [
+        "warm white",
+        "yellow"
+      ],
+      "avoided_colors": [],
+      "severity": "info",
+      "rationale": "Task lamps are light and fire-associated objects, so south-east or east placement is acceptable.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.52
+    },
+    {
+      "rule_id": "VR-025",
+      "perspective": "color",
+      "room_type": "study",
+      "object_class": "desk",
+      "preferred_zones": [
+        "N",
+        "E"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "cream",
+        "green",
+        "light blue"
+      ],
+      "avoided_colors": [
+        "black"
+      ],
+      "severity": "info",
+      "rationale": "Light study colors are traditionally preferred for focus and a calmer work setting.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.46
+    },
+    {
+      "rule_id": "VR-026",
+      "perspective": "placement",
+      "room_type": "kitchen",
+      "object_class": "stove",
+      "preferred_zones": [
+        "SE"
+      ],
+      "avoided_zones": [
+        "N",
+        "NE"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "critical",
+      "rationale": "Popular Vastu guidance associates cooking fire with the south-east and avoids placing it in north-east.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.63
+    },
+    {
+      "rule_id": "VR-027",
+      "perspective": "orientation",
+      "room_type": "kitchen",
+      "object_class": "stove",
+      "preferred_zones": [
+        "E"
+      ],
+      "avoided_zones": [
+        "W"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Cooking while facing east is a common traditional recommendation when kitchen layout permits it.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.55
+    },
+    {
+      "rule_id": "VR-028",
+      "perspective": "placement",
+      "room_type": "any",
+      "object_class": "water_feature",
+      "preferred_zones": [
+        "N",
+        "NE"
+      ],
+      "avoided_zones": [
+        "SE"
+      ],
+      "preferred_colors": [],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Water features are commonly associated with north or north-east and kept away from the fire-oriented south-east.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.54
+    },
+    {
+      "rule_id": "VR-029",
+      "perspective": "clearance",
+      "room_type": "any",
+      "object_class": "central_clearance",
+      "preferred_zones": [
+        "C"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "cream"
+      ],
+      "avoided_colors": [],
+      "severity": "warn",
+      "rationale": "Traditional grid guidance treats the center as a calm organizing area and discourages heavy obstruction.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.59
+    },
+    {
+      "rule_id": "VR-030",
+      "perspective": "color",
+      "room_type": "any",
+      "object_class": "heavy_furniture",
+      "preferred_zones": [
+        "S",
+        "W",
+        "SW"
+      ],
+      "avoided_zones": [],
+      "preferred_colors": [
+        "earth",
+        "wood",
+        "cream"
+      ],
+      "avoided_colors": [
+        "neon"
+      ],
+      "severity": "info",
+      "rationale": "Grounded earth and wood tones are preferred for heavy furniture when Vastu styling is requested.",
+      "source_urls": [
+        "https://en.wikipedia.org/wiki/Vastu_shastra",
+        "https://en.wikipedia.org/wiki/Hindu_temple_architecture"
+      ],
+      "confidence": 0.45
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "catalogue_path": "data/curated/abo_mvp_catalogue.csv",
+  "row_count": 180,
+  "category_counts": {
+    "sofa": 15,
+    "loveseat": 15,
+    "bed": 15,
+    "cabinet": 15,
+    "storage": 15,
+    "table": 15,
+    "desk": 15,
+    "chair": 15,
+    "rug": 15,
+    "lamp": 15,
+    "mirror": 15,
+    "planter": 15
+  },
+  "columns": [
+    "item_id",
+    "normalized_category",
+    "title",
+    "width_cm",
+    "depth_cm",
+    "height_cm",
+    "original_length_value",
+    "original_length_unit",
+    "original_width_value",
+    "original_width_unit",
+    "original_height_value",
+    "original_height_unit",
+    "material",
+    "color",
+    "image_id",
+    "image_path",
+    "style_text",
+    "price_inr",
+    "price_note",
+    "source_dataset"
+  ],
+  "pricing": "Every item has an indicative INR price with a row-specific comparable Indian furniture source in price_note.",
+  "dimension_audit": "Every row preserves original length/width/height values and units, plus converted cm dimensions."
+}

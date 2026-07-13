@@ -1,0 +1,21 @@
+brief_id,system,status,selected_item_count,fit_pass,budget_pass,sourceable_items,sourceability_rate,vastu_applicable,vastu_pass_or_warn,vastu_score,total_price_inr,budget_inr,failure_reason
+living_room_warm_family_vastu,formaos,passed,4,True,True,4,1.0,True,True,50,14700,85000,
+living_room_warm_family_vastu,baseline_ungrounded,partial,4,False,True,0,0.0,True,False,,85000,85000,ungrounded baseline output
+small_living_room_low_budget,formaos,passed,4,True,True,4,1.0,False,,,15200,45000,
+small_living_room_low_budget,baseline_ungrounded,partial,4,False,True,0,0.0,False,,,45000,45000,ungrounded baseline output
+large_living_room_premium,formaos,passed,4,True,True,4,1.0,True,True,50,21800,240000,
+large_living_room_premium,baseline_ungrounded,partial,4,False,True,0,0.0,True,False,,240000,240000,ungrounded baseline output
+bedroom_calm_storage_vastu,formaos,failed,3,False,True,3,1.0,True,True,50,10100,120000,budget_exceeded
+bedroom_calm_storage_vastu,baseline_ungrounded,partial,4,False,True,0,0.0,True,False,,120000,120000,ungrounded baseline output
+bedroom_low_budget_no_vastu,formaos,failed,3,False,True,3,1.0,False,,,10500,55000,maximum_width_exceeded
+bedroom_low_budget_no_vastu,baseline_ungrounded,partial,4,False,True,0,0.0,False,,,55000,55000,ungrounded baseline output
+study_compact_work_from_home,formaos,passed,4,True,True,4,1.0,False,,,17700,70000,
+study_compact_work_from_home,baseline_ungrounded,partial,4,False,True,0,0.0,False,,,70000,70000,ungrounded baseline output
+study_premium_vastu,formaos,passed,4,True,True,4,1.0,True,True,88,19300,150000,
+study_premium_vastu,baseline_ungrounded,partial,4,False,True,0,0.0,True,False,,150000,150000,ungrounded baseline output
+living_room_metric_units,formaos,passed,4,True,True,4,1.0,False,,,21500,95000,
+living_room_metric_units,baseline_ungrounded,partial,4,False,True,0,0.0,False,,,95000,95000,ungrounded baseline output
+impossible_tiny_room_full_set,formaos,failed,2,False,True,2,1.0,True,True,50,5200,30000,maximum_width_exceeded; maximum_width_exceeded
+impossible_tiny_room_full_set,baseline_ungrounded,partial,4,False,True,0,0.0,True,False,,30000,30000,ungrounded baseline output
+impossible_budget_bedroom,formaos,failed,2,False,True,2,1.0,False,,,5400,12000,dimension_combination_exceeded; budget_exceeded
+impossible_budget_bedroom,baseline_ungrounded,partial,4,False,True,0,0.0,False,,,12000,12000,ungrounded baseline output

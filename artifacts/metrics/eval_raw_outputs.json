@@ -1,0 +1,1356 @@
+[
+  {
+    "brief_id": "living_room_warm_family_vastu",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_table",
+        "category": "table",
+        "item_id": "B072ZLCB3M",
+        "title": "Amazon Brand Rivet Bristol Natural Edge Black Metal Side Table, Walnut",
+        "width_cm": 48.0,
+        "depth_cm": 46.2,
+        "height_cm": 48.0,
+        "price_inr": 4900,
+        "image_path": "/product-images/B072ZLCB3M-81Xh_yZvD1L.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_rug",
+        "category": "rug",
+        "item_id": "B071777YN3",
+        "title": "Stone & Beam Mid-Century Modern Blooming Medallion Rug, 4' x 6', Dark Grey",
+        "width_cm": 182.9,
+        "depth_cm": 121.9,
+        "height_cm": 0.5,
+        "price_inr": 7100,
+        "image_path": "/product-images/B071777YN3-A194kPVvFmL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B07HK85JKQ",
+        "title": "Amazon Brand Rivet Modern Wall Sconce with Bulb, 9.13\"H, Satin Brass",
+        "width_cm": 16.8,
+        "depth_cm": 19.1,
+        "height_cm": 23.2,
+        "price_inr": 1900,
+        "image_path": "/product-images/B07HK85JKQ-41W9gvOehbL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_planter",
+        "category": "planter",
+        "item_id": "B07SBJLFNN",
+        "title": "AmazonBasics Wall Planter, Oval - Grey/Copper",
+        "width_cm": 30.5,
+        "depth_cm": 12.8,
+        "height_cm": 13.9,
+        "price_inr": 800,
+        "image_path": "/product-images/B07SBJLFNN-71IOasj6DAL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 14700,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "nice: prefer wood, cream tones/material cues for Amazon Brand Rivet Bristol Natural Edge Black Metal Side Table, Walnut.",
+      "should: prefer cream tones/material cues for Amazon Brand Rivet Bristol Natural Edge Black Metal Side Table, Walnut.",
+      "nice: prefer earth, green, cream tones/material cues for Stone & Beam Mid-Century Modern Blooming Medallion Rug, 4' x 6', Dark Grey.",
+      "should: prefer cream, earth tones/material cues for Stone & Beam Mid-Century Modern Blooming Medallion Rug, 4' x 6', Dark Grey.",
+      "should: prefer cream tones/material cues for Stone & Beam Mid-Century Modern Blooming Medallion Rug, 4' x 6', Dark Grey.",
+      "nice: prefer warm white, gold, yellow tones/material cues for Amazon Brand Rivet Modern Wall Sconce with Bulb, 9.13\"H, Satin Brass.",
+      "nice: avoid blue for Amazon Brand Rivet Modern Wall Sconce with Bulb, 9.13\"H, Satin Brass.",
+      "nice: prefer green tones/material cues for AmazonBasics Wall Planter, Oval - Grey/Copper."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "living_room_warm_family_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 21250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_rug",
+        "category": "rug",
+        "item_id": null,
+        "title": "Estimated rug",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 1,
+        "price_inr": 21250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 45,
+        "price_inr": 21250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_planter",
+        "category": "planter",
+        "item_id": null,
+        "title": "Estimated planter",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 21250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 85000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "No deterministic Vastu rule execution was run."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "small_living_room_low_budget",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_table",
+        "category": "table",
+        "item_id": "B01N3MBCKT",
+        "title": "Ameriwood Home Carver End Table, Gray/Sonoma Oak",
+        "width_cm": 51.1,
+        "depth_cm": 59.2,
+        "height_cm": 51.1,
+        "price_inr": 5100,
+        "image_path": "/product-images/B01N3MBCKT-91Y-oQZAKUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_rug",
+        "category": "rug",
+        "item_id": "B07QFB4XBP",
+        "title": "Amazon Brand Rivet Contemporary Handtufted Cotton-and-Wool Area Rug with Geometric Feathered Pattern, 4' x 6', Green and Cream",
+        "width_cm": 121.9,
+        "depth_cm": 182.9,
+        "height_cm": 0.8,
+        "price_inr": 7100,
+        "image_path": "/product-images/B07QFB4XBP-A1SkEZZFKtL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B082DNTKB6",
+        "title": "Amazon Brand Rivet Single-Light Plug-In Wall Sconce with Frosted Glass Shade, 12\"H, LED Bulb Included, Matte Brass",
+        "width_cm": 17.8,
+        "depth_cm": 25.4,
+        "height_cm": 30.5,
+        "price_inr": 2200,
+        "image_path": "/product-images/B082DNTKB6-61I6OlmlqCL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_planter",
+        "category": "planter",
+        "item_id": "B07S8CJGN5",
+        "title": "AmazonBasics Tabletop Planter, Square - White/Brass (2-Pack)",
+        "width_cm": 12.5,
+        "depth_cm": 10.8,
+        "height_cm": 12.5,
+        "price_inr": 800,
+        "image_path": "/product-images/B07S8CJGN5-7149ykWF_TL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 15200,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "Vastu guidance was not requested."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "small_living_room_low_budget",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 170.7,
+        "depth_cm": 167.6,
+        "height_cm": 75,
+        "price_inr": 11250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_rug",
+        "category": "rug",
+        "item_id": null,
+        "title": "Estimated rug",
+        "width_cm": 170.7,
+        "depth_cm": 167.6,
+        "height_cm": 1,
+        "price_inr": 11250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 170.7,
+        "depth_cm": 167.6,
+        "height_cm": 45,
+        "price_inr": 11250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_planter",
+        "category": "planter",
+        "item_id": null,
+        "title": "Estimated planter",
+        "width_cm": 170.7,
+        "depth_cm": 167.6,
+        "height_cm": 75,
+        "price_inr": 11250,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 45000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "Vastu not requested."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "large_living_room_premium",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_table",
+        "category": "table",
+        "item_id": "B01N3MBCKT",
+        "title": "Ameriwood Home Carver End Table, Gray/Sonoma Oak",
+        "width_cm": 51.1,
+        "depth_cm": 59.2,
+        "height_cm": 51.1,
+        "price_inr": 5100,
+        "image_path": "/product-images/B01N3MBCKT-91Y-oQZAKUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_rug",
+        "category": "rug",
+        "item_id": "B07TZMWH8M",
+        "title": "Amazon Basics - 6'X9' Solid Color Shag Rug, Beige",
+        "width_cm": 274.3,
+        "depth_cm": 177.8,
+        "height_cm": 3.0,
+        "price_inr": 13700,
+        "image_path": "/product-images/B07TZMWH8M-91Kd_c1lk0L.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B082DNTKB6",
+        "title": "Amazon Brand Rivet Single-Light Plug-In Wall Sconce with Frosted Glass Shade, 12\"H, LED Bulb Included, Matte Brass",
+        "width_cm": 17.8,
+        "depth_cm": 25.4,
+        "height_cm": 30.5,
+        "price_inr": 2200,
+        "image_path": "/product-images/B082DNTKB6-61I6OlmlqCL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_planter",
+        "category": "planter",
+        "item_id": "B07S8CJGN5",
+        "title": "AmazonBasics Tabletop Planter, Square - White/Brass (2-Pack)",
+        "width_cm": 12.5,
+        "depth_cm": 10.8,
+        "height_cm": 12.5,
+        "price_inr": 800,
+        "image_path": "/product-images/B07S8CJGN5-7149ykWF_TL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 21800,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "nice: prefer wood, cream tones/material cues for Ameriwood Home Carver End Table, Gray/Sonoma Oak.",
+      "should: prefer cream tones/material cues for Ameriwood Home Carver End Table, Gray/Sonoma Oak.",
+      "nice: prefer earth, green, cream tones/material cues for Amazon Basics - 6'X9' Solid Color Shag Rug, Beige.",
+      "should: prefer cream, earth tones/material cues for Amazon Basics - 6'X9' Solid Color Shag Rug, Beige.",
+      "should: prefer cream tones/material cues for Amazon Basics - 6'X9' Solid Color Shag Rug, Beige.",
+      "nice: prefer warm white, gold, yellow tones/material cues for Amazon Brand Rivet Single-Light Plug-In Wall Sconce with Frosted Glass Shade, 12\"H, LED Bulb Included, Matte Brass.",
+      "nice: avoid blue for Amazon Brand Rivet Single-Light Plug-In Wall Sconce with Frosted Glass Shade, 12\"H, LED Bulb Included, Matte Brass.",
+      "nice: prefer green tones/material cues for AmazonBasics Tabletop Planter, Square - White/Brass (2-Pack)."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "large_living_room_premium",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 75,
+        "price_inr": 60000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_rug",
+        "category": "rug",
+        "item_id": null,
+        "title": "Estimated rug",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 1,
+        "price_inr": 60000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 45,
+        "price_inr": 60000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_planter",
+        "category": "planter",
+        "item_id": null,
+        "title": "Estimated planter",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 75,
+        "price_inr": 60000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 240000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "No deterministic Vastu rule execution was run."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "bedroom_calm_storage_vastu",
+    "system": "formaos",
+    "status": "failed",
+    "selected_items": [
+      {
+        "slot_id": "slot_2_storage",
+        "category": "storage",
+        "item_id": "B07HK83MJL",
+        "title": "Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent",
+        "width_cm": 19.5,
+        "depth_cm": 19.5,
+        "height_cm": 21.5,
+        "price_inr": 2900,
+        "image_path": "/product-images/B07HK83MJL-71SdZ4bdXsL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_table",
+        "category": "table",
+        "item_id": "B01N3MBCKT",
+        "title": "Ameriwood Home Carver End Table, Gray/Sonoma Oak",
+        "width_cm": 51.1,
+        "depth_cm": 59.2,
+        "height_cm": 51.1,
+        "price_inr": 5100,
+        "image_path": "/product-images/B01N3MBCKT-91Y-oQZAKUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_lamp",
+        "category": "lamp",
+        "item_id": "B089LB7TJC",
+        "title": "AmazonBasics Outdoor Wall Mount Coach Light with Bulb and Clear Glass Diffuser - 11.3 x 10.7 x 13 Inches, Black",
+        "width_cm": 28.7,
+        "depth_cm": 33.0,
+        "height_cm": 27.2,
+        "price_inr": 2100,
+        "image_path": "/product-images/B089LB7TJC-61OnkGVhMWL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 10100,
+    "fit_notes": [
+      "Select a real bed for slot_1_bed; blocked by budget_exceeded."
+    ],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "should: prefer wood, earth tones/material cues for Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent.",
+      "nice: avoid neon for Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent.",
+      "nice: consider placing Ameriwood Home Carver End Table, Gray/Sonoma Oak in N, E, NE.",
+      "should: prefer cream tones/material cues for Ameriwood Home Carver End Table, Gray/Sonoma Oak.",
+      "nice: prefer warm white, yellow tones/material cues for AmazonBasics Outdoor Wall Mount Coach Light with Bulb and Clear Glass Diffuser - 11.3 x 10.7 x 13 Inches, Black."
+    ],
+    "failure_reason": "budget_exceeded"
+  },
+  {
+    "brief_id": "bedroom_calm_storage_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_bed",
+        "category": "bed",
+        "item_id": null,
+        "title": "Estimated bed",
+        "width_cm": 220,
+        "depth_cm": 217.9,
+        "height_cm": 75,
+        "price_inr": 30000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 220,
+        "depth_cm": 217.9,
+        "height_cm": 75,
+        "price_inr": 30000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 220,
+        "depth_cm": 217.9,
+        "height_cm": 75,
+        "price_inr": 30000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 220,
+        "depth_cm": 217.9,
+        "height_cm": 45,
+        "price_inr": 30000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 120000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "No deterministic Vastu rule execution was run."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "bedroom_low_budget_no_vastu",
+    "system": "formaos",
+    "status": "failed",
+    "selected_items": [
+      {
+        "slot_id": "slot_2_storage",
+        "category": "storage",
+        "item_id": "B07HK83MJL",
+        "title": "Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent",
+        "width_cm": 19.5,
+        "depth_cm": 19.5,
+        "height_cm": 21.5,
+        "price_inr": 2900,
+        "image_path": "/product-images/B07HK83MJL-71SdZ4bdXsL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_table",
+        "category": "table",
+        "item_id": "B01N3MBCKT",
+        "title": "Ameriwood Home Carver End Table, Gray/Sonoma Oak",
+        "width_cm": 51.1,
+        "depth_cm": 59.2,
+        "height_cm": 51.1,
+        "price_inr": 5100,
+        "image_path": "/product-images/B01N3MBCKT-91Y-oQZAKUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_lamp",
+        "category": "lamp",
+        "item_id": "B082JHXMHL",
+        "title": "Amazon Brand Stone & Beam Contemporary Outdoor Pendant Light with Clear Glass Shade, Vintage Edison Bulb Included, 15\"H, Matte Black",
+        "width_cm": 30.5,
+        "depth_cm": 30.5,
+        "height_cm": 39.3,
+        "price_inr": 2500,
+        "image_path": "/product-images/B082JHXMHL-71Lcs9JIpUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 10500,
+    "fit_notes": [
+      "Select a real bed for slot_1_bed; blocked by maximum_width_exceeded."
+    ],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "Vastu guidance was not requested."
+    ],
+    "failure_reason": "maximum_width_exceeded"
+  },
+  {
+    "brief_id": "bedroom_low_budget_no_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_bed",
+        "category": "bed",
+        "item_id": null,
+        "title": "Estimated bed",
+        "width_cm": 192.0,
+        "depth_cm": 167.6,
+        "height_cm": 75,
+        "price_inr": 13750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 192.0,
+        "depth_cm": 167.6,
+        "height_cm": 75,
+        "price_inr": 13750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 192.0,
+        "depth_cm": 167.6,
+        "height_cm": 75,
+        "price_inr": 13750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 192.0,
+        "depth_cm": 167.6,
+        "height_cm": 45,
+        "price_inr": 13750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 55000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "Vastu not requested."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "study_compact_work_from_home",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_desk",
+        "category": "desk",
+        "item_id": "B07ZGC6MBX",
+        "title": "AmazonBasics Classic Adjustable Office Desk Chair - Twill Fabric, Navy (Renewed)",
+        "width_cm": 65.5,
+        "depth_cm": 60.0,
+        "height_cm": 82.0,
+        "price_inr": 8300,
+        "image_path": "/product-images/B07ZGC6MBX-81T42pkGUoL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_chair",
+        "category": "chair",
+        "item_id": "B07DBHCKHY",
+        "title": "Amazon Brand Ravenna Home Tufted Armless English Roll Traditional Accent Chair, 26.8\"W, Merlot Red",
+        "width_cm": 64.0,
+        "depth_cm": 68.1,
+        "height_cm": 78.0,
+        "price_inr": 4300,
+        "image_path": "/product-images/B07DBHCKHY-81l_UPz-wZL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B07DBHC39X",
+        "title": "Ravenna Home Classic Linen Fabric Flushmount Ceiling Pendant Light Fixture with 2 LED Light Bulbs - 13 x 13 x 7.5 Inches, Silver",
+        "width_cm": 39.4,
+        "depth_cm": 39.4,
+        "height_cm": 26.7,
+        "price_inr": 2200,
+        "image_path": "/product-images/B07DBHC39X-415W01x3YTL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_storage",
+        "category": "storage",
+        "item_id": "B07HK83MJL",
+        "title": "Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent",
+        "width_cm": 19.5,
+        "depth_cm": 19.5,
+        "height_cm": 21.5,
+        "price_inr": 2900,
+        "image_path": "/product-images/B07HK83MJL-71SdZ4bdXsL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 17700,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "Vastu guidance was not requested."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "study_compact_work_from_home",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_desk",
+        "category": "desk",
+        "item_id": null,
+        "title": "Estimated desk",
+        "width_cm": 170.7,
+        "depth_cm": 150.9,
+        "height_cm": 75,
+        "price_inr": 17500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_chair",
+        "category": "chair",
+        "item_id": null,
+        "title": "Estimated chair",
+        "width_cm": 170.7,
+        "depth_cm": 150.9,
+        "height_cm": 75,
+        "price_inr": 17500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 170.7,
+        "depth_cm": 150.9,
+        "height_cm": 45,
+        "price_inr": 17500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 170.7,
+        "depth_cm": 150.9,
+        "height_cm": 75,
+        "price_inr": 17500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 70000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "Vastu not requested."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "study_premium_vastu",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_desk",
+        "category": "desk",
+        "item_id": "B07YBHVN3Y",
+        "title": "AmazonBasics Solid Wood Kid Desk and Chair, Espresso",
+        "width_cm": 60.0,
+        "depth_cm": 39.5,
+        "height_cm": 54.1,
+        "price_inr": 7600,
+        "image_path": "/product-images/B07YBHVN3Y-81QpTUreTML.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_chair",
+        "category": "chair",
+        "item_id": "B083H3WMT3",
+        "title": "AmazonBasics Classic Faux Leather Extra Padded Recliner Chair - Brown (Renewed)",
+        "width_cm": 83.1,
+        "depth_cm": 95.0,
+        "height_cm": 98.0,
+        "price_inr": 6000,
+        "image_path": "/product-images/B083H3WMT3-91udGka1EiL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B089LB7TJC",
+        "title": "AmazonBasics Outdoor Wall Mount Coach Light with Bulb and Clear Glass Diffuser - 11.3 x 10.7 x 13 Inches, Black",
+        "width_cm": 28.7,
+        "depth_cm": 33.0,
+        "height_cm": 27.2,
+        "price_inr": 2100,
+        "image_path": "/product-images/B089LB7TJC-61OnkGVhMWL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_storage",
+        "category": "storage",
+        "item_id": "B07H2HGZLK",
+        "title": "Red Hook Meknes Storage Ottoman Bench with Fabric Upholstery - 48 x 17 x 16 Inches, Almond",
+        "width_cm": 121.9,
+        "depth_cm": 43.2,
+        "height_cm": 40.6,
+        "price_inr": 3600,
+        "image_path": "/product-images/B07H2HGZLK-91X5DEPWIJL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 19300,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "nice: avoid black for AmazonBasics Solid Wood Kid Desk and Chair, Espresso.",
+      "nice: prefer warm white, yellow tones/material cues for AmazonBasics Outdoor Wall Mount Coach Light with Bulb and Clear Glass Diffuser - 11.3 x 10.7 x 13 Inches, Black."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "study_premium_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_desk",
+        "category": "desk",
+        "item_id": null,
+        "title": "Estimated desk",
+        "width_cm": 220,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 37500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_chair",
+        "category": "chair",
+        "item_id": null,
+        "title": "Estimated chair",
+        "width_cm": 220,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 37500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 220,
+        "depth_cm": 201.2,
+        "height_cm": 45,
+        "price_inr": 37500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 220,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 37500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 150000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "No deterministic Vastu rule execution was run."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "living_room_metric_units",
+    "system": "formaos",
+    "status": "passed",
+    "selected_items": [
+      {
+        "slot_id": "slot_1_table",
+        "category": "table",
+        "item_id": "B01N3MBCKT",
+        "title": "Ameriwood Home Carver End Table, Gray/Sonoma Oak",
+        "width_cm": 51.1,
+        "depth_cm": 59.2,
+        "height_cm": 51.1,
+        "price_inr": 5100,
+        "image_path": "/product-images/B01N3MBCKT-91Y-oQZAKUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_2_rug",
+        "category": "rug",
+        "item_id": "B07TZMWH8M",
+        "title": "Amazon Basics - 6'X9' Solid Color Shag Rug, Beige",
+        "width_cm": 274.3,
+        "depth_cm": 177.8,
+        "height_cm": 3.0,
+        "price_inr": 13700,
+        "image_path": "/product-images/B07TZMWH8M-91Kd_c1lk0L.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_3_lamp",
+        "category": "lamp",
+        "item_id": "B07HK85JKQ",
+        "title": "Amazon Brand Rivet Modern Wall Sconce with Bulb, 9.13\"H, Satin Brass",
+        "width_cm": 16.8,
+        "depth_cm": 19.1,
+        "height_cm": 23.2,
+        "price_inr": 1900,
+        "image_path": "/product-images/B07HK85JKQ-41W9gvOehbL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_planter",
+        "category": "planter",
+        "item_id": "B07SBJLFNN",
+        "title": "AmazonBasics Wall Planter, Oval - Grey/Copper",
+        "width_cm": 30.5,
+        "depth_cm": 12.8,
+        "height_cm": 13.9,
+        "price_inr": 800,
+        "image_path": "/product-images/B07SBJLFNN-71IOasj6DAL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 21500,
+    "fit_notes": [],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "Vastu guidance was not requested."
+    ],
+    "failure_reason": ""
+  },
+  {
+    "brief_id": "living_room_metric_units",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 75,
+        "price_inr": 23750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_rug",
+        "category": "rug",
+        "item_id": null,
+        "title": "Estimated rug",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 1,
+        "price_inr": 23750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 45,
+        "price_inr": 23750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_planter",
+        "category": "planter",
+        "item_id": null,
+        "title": "Estimated planter",
+        "width_cm": 220,
+        "depth_cm": 220,
+        "height_cm": 75,
+        "price_inr": 23750,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 95000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "Vastu not requested."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "impossible_tiny_room_full_set",
+    "system": "formaos",
+    "status": "failed",
+    "selected_items": [
+      {
+        "slot_id": "slot_3_storage",
+        "category": "storage",
+        "item_id": "B07HK83MJL",
+        "title": "Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent",
+        "width_cm": 19.5,
+        "depth_cm": 19.5,
+        "height_cm": 21.5,
+        "price_inr": 2900,
+        "image_path": "/product-images/B07HK83MJL-71SdZ4bdXsL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_lamp",
+        "category": "lamp",
+        "item_id": "B07QB7HXXF",
+        "title": "Amazon Brand Ravenna Home Classic Wall Sconce Light, 14.11\"H, Black",
+        "width_cm": 11.3,
+        "depth_cm": 22.8,
+        "height_cm": 35.8,
+        "price_inr": 2300,
+        "image_path": "/product-images/B07QB7HXXF-81iOdMpRYyL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 5200,
+    "fit_notes": [
+      "Select a real sofa for slot_1_sofa; blocked by maximum_width_exceeded.",
+      "Select a real rug for slot_2_rug; blocked by maximum_width_exceeded."
+    ],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "should: prefer wood, earth tones/material cues for Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent.",
+      "nice: avoid neon for Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent.",
+      "nice: prefer warm white, gold, yellow tones/material cues for Amazon Brand Ravenna Home Classic Wall Sconce Light, 14.11\"H, Black.",
+      "nice: avoid blue for Amazon Brand Ravenna Home Classic Wall Sconce Light, 14.11\"H, Black."
+    ],
+    "failure_reason": "maximum_width_exceeded; maximum_width_exceeded"
+  },
+  {
+    "brief_id": "impossible_tiny_room_full_set",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_sofa",
+        "category": "sofa",
+        "item_id": null,
+        "title": "Estimated sofa",
+        "width_cm": 106.7,
+        "depth_cm": 100.6,
+        "height_cm": 75,
+        "price_inr": 7500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_rug",
+        "category": "rug",
+        "item_id": null,
+        "title": "Estimated rug",
+        "width_cm": 106.7,
+        "depth_cm": 100.6,
+        "height_cm": 1,
+        "price_inr": 7500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 106.7,
+        "depth_cm": 100.6,
+        "height_cm": 75,
+        "price_inr": 7500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 106.7,
+        "depth_cm": 100.6,
+        "height_cm": 45,
+        "price_inr": 7500,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 30000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "No deterministic Vastu rule execution was run."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "impossible_budget_bedroom",
+    "system": "formaos",
+    "status": "failed",
+    "selected_items": [
+      {
+        "slot_id": "slot_2_storage",
+        "category": "storage",
+        "item_id": "B07HK83MJL",
+        "title": "Amazon Brand - Solimo Plastic Kitchen Storage Container Set, 750ml, 8-Pieces, Transparent",
+        "width_cm": 19.5,
+        "depth_cm": 19.5,
+        "height_cm": 21.5,
+        "price_inr": 2900,
+        "image_path": "/product-images/B07HK83MJL-71SdZ4bdXsL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      },
+      {
+        "slot_id": "slot_4_lamp",
+        "category": "lamp",
+        "item_id": "B082JHXMHL",
+        "title": "Amazon Brand Stone & Beam Contemporary Outdoor Pendant Light with Clear Glass Shade, Vintage Edison Bulb Included, 15\"H, Matte Black",
+        "width_cm": 30.5,
+        "depth_cm": 30.5,
+        "height_cm": 39.3,
+        "price_inr": 2500,
+        "image_path": "/product-images/B082JHXMHL-71Lcs9JIpUL.jpg",
+        "source_dataset": "ABO",
+        "estimated": false
+      }
+    ],
+    "total_price_inr": 5400,
+    "fit_notes": [
+      "Select a real bed for slot_1_bed; blocked by dimension_combination_exceeded.",
+      "Select a real table for slot_3_table; blocked by budget_exceeded."
+    ],
+    "budget_notes": [],
+    "sourceability_notes": [],
+    "vastu_notes": [
+      "Vastu guidance was not requested."
+    ],
+    "failure_reason": "dimension_combination_exceeded; budget_exceeded"
+  },
+  {
+    "brief_id": "impossible_budget_bedroom",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "selected_items": [
+      {
+        "slot_id": "baseline_slot_1_bed",
+        "category": "bed",
+        "item_id": null,
+        "title": "Estimated bed",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 3000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_2_storage",
+        "category": "storage",
+        "item_id": null,
+        "title": "Estimated storage",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 3000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_3_table",
+        "category": "table",
+        "item_id": null,
+        "title": "Estimated table",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 75,
+        "price_inr": 3000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      },
+      {
+        "slot_id": "baseline_slot_4_lamp",
+        "category": "lamp",
+        "item_id": null,
+        "title": "Estimated lamp",
+        "width_cm": 213.4,
+        "depth_cm": 201.2,
+        "height_cm": 45,
+        "price_inr": 3000,
+        "image_path": null,
+        "source_dataset": "baseline_ungrounded",
+        "estimated": true
+      }
+    ],
+    "total_price_inr": 12000,
+    "fit_notes": [
+      "Dimensions are estimates; no hard room or slot fit validation was run."
+    ],
+    "budget_notes": [
+      "Prices are estimates; no catalogue price validation was run."
+    ],
+    "sourceability_notes": [
+      "No selected item maps to a curated catalogue item_id."
+    ],
+    "vastu_notes": [
+      "Vastu not requested."
+    ],
+    "failure_reason": "ungrounded baseline output"
+  }
+]

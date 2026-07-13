@@ -1,0 +1,10 @@
+{
+  "manifest_id": "formaos_eval_freeze_v1",
+  "frozen": true,
+  "frozen_at": "2026-07-11T00:00:00Z",
+  "briefs_path": "data/eval/test_briefs.json",
+  "baseline_path": "data/eval/baseline_definition.json",
+  "output_schema_path": "data/eval/output_schema.json",
+  "metric_definitions_path": "data/eval/metric_definitions.json",
+  "rule": "Do not edit briefs, baseline rules, output schema, or metric definitions after T21 metrics are run."
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "brief_id": "living_room_warm_family_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "small_living_room_low_budget",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "large_living_room_premium",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "bedroom_calm_storage_vastu",
+    "system": "formaos",
+    "status": "failed",
+    "failure_reason": "budget_exceeded"
+  },
+  {
+    "brief_id": "bedroom_calm_storage_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "bedroom_low_budget_no_vastu",
+    "system": "formaos",
+    "status": "failed",
+    "failure_reason": "maximum_width_exceeded"
+  },
+  {
+    "brief_id": "bedroom_low_budget_no_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "study_compact_work_from_home",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "study_premium_vastu",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "living_room_metric_units",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "impossible_tiny_room_full_set",
+    "system": "formaos",
+    "status": "failed",
+    "failure_reason": "maximum_width_exceeded; maximum_width_exceeded"
+  },
+  {
+    "brief_id": "impossible_tiny_room_full_set",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  },
+  {
+    "brief_id": "impossible_budget_bedroom",
+    "system": "formaos",
+    "status": "failed",
+    "failure_reason": "dimension_combination_exceeded; budget_exceeded"
+  },
+  {
+    "brief_id": "impossible_budget_bedroom",
+    "system": "baseline_ungrounded",
+    "status": "partial",
+    "failure_reason": "ungrounded baseline output"
+  }
+]

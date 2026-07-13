@@ -1,0 +1,88 @@
+{
+  "status": "PASS",
+  "generated_at": "2026-07-11T20:07:03.248Z",
+  "commands": {
+    "environment": "export PATH=\"$PWD/.tools/node/bin:$PWD/.tools/bin:$PATH\"; export UV_CACHE_DIR=\"$PWD/.uv-cache\"; export PYTHONPATH=backend",
+    "backend": "FORMAOS_DEMO_PLANNER=1 uv run uvicorn formaos.api.main:app --app-dir backend --reload",
+    "frontend": "npm run dev",
+    "acceptance": "npm run demo:acceptance",
+    "tests": "npm test"
+  },
+  "versions": {
+    "node": "v22.23.1",
+    "package": "formaos-mvp@0.1.0",
+    "python_project": "formaos-backend@0.1.0"
+  },
+  "selected_model": "Demo acceptance used FORMAOS_DEMO_PLANNER=1 deterministic local planner; production Planner default is OpenRouter openai/gpt-4.1-mini when OPENROUTER_API_KEY is configured.",
+  "dataset_subset_size": {
+    "curated_catalogue_items": 180,
+    "image_mapped_items": 180,
+    "vastu_rules": 30,
+    "evaluation_briefs": 10
+  },
+  "demo_brief": {
+    "room_type": "living_room",
+    "width": 10,
+    "depth": 12,
+    "units": "ft",
+    "budget_inr": 85000,
+    "style_words": [
+      "warm",
+      "wood",
+      "storage"
+    ],
+    "constraints": [
+      "kid-friendly",
+      "extra storage"
+    ],
+    "vastu_enabled": true,
+    "main_door_direction": "N",
+    "compass_direction": "N"
+  },
+  "session_id": "local-68fa65f884e2",
+  "design_id": "design-50c946e3a07b",
+  "checks": {
+    "first_design_status": "passed",
+    "attempt_log_states": [
+      "planning",
+      "designing",
+      "grounding",
+      "passed"
+    ],
+    "revision_status": "passed",
+    "revision_design_id_persisted": true,
+    "revised_item_ids": [
+      "B01N3MBCKT",
+      "B07QFB4XBP",
+      "B082DNTKB6",
+      "B07SBJLFNN"
+    ],
+    "corrected_item_list_count": 4,
+    "selected_item_ids": [
+      "B01N3MBCKT",
+      "B07QFB4XBP",
+      "B082DNTKB6",
+      "B07SBJLFNN"
+    ],
+    "selected_total_inr": 15200,
+    "selected_total_matches_items": true,
+    "budget_status": "pass",
+    "vastu_status": "warn",
+    "export_brief_loaded": true,
+    "metrics_available": true
+  },
+  "browser_evidence": {
+    "status": "pass",
+    "screenshots": [
+      "artifacts/demo/workspace.png",
+      "artifacts/demo/export_brief.png"
+    ],
+    "pdf": "artifacts/demo/export_brief.pdf",
+    "images_loaded": true,
+    "export_contains_required_sections": true
+  },
+  "pass_fail_notes": [
+    "Backend session, chat design, export brief, and metrics evidence completed under demo conditions.",
+    "Acceptance run uses deterministic demo planner to avoid external API spend while preserving Planner/Designer/Grounder/Critic/Reviser flow."
+  ]
+}

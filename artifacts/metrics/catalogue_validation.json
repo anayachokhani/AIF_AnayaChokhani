@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "total_rows": 180,
+  "category_distribution": {
+    "sofa": 15,
+    "loveseat": 15,
+    "bed": 15,
+    "cabinet": 15,
+    "storage": 15,
+    "table": 15,
+    "desk": 15,
+    "chair": 15,
+    "rug": 15,
+    "lamp": 15,
+    "mirror": 15,
+    "planter": 15
+  },
+  "duplicate_item_ids": [],
+  "missing_required_columns": [],
+  "missing_required_fields": [],
+  "invalid_categories": [],
+  "invalid_dimensions": [],
+  "missing_prices": [],
+  "missing_price_notes": [],
+  "missing_materials": [],
+  "missing_colours": [],
+  "missing_images": [],
+  "price_outliers": [],
+  "dimension_outliers": [],
+  "missing_original_dimension_audit": []
+}

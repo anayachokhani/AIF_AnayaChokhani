@@ -1,0 +1,10 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="480" fill="#F7FAF8"/>
+  <rect x="72" y="72" width="496" height="336" rx="18" fill="#E8F0FA" stroke="#1F4E79" stroke-width="6"/>
+  <path d="M172 318H468" stroke="#0B6E4F" stroke-width="18" stroke-linecap="round"/>
+  <path d="M214 318V250C214 226.804 232.804 208 256 208H384C407.196 208 426 226.804 426 250V318" stroke="#0B6E4F" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="246" cy="350" r="16" fill="#1F4E79"/>
+  <circle cx="394" cy="350" r="16" fill="#1F4E79"/>
+  <text x="320" y="142" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#1F4E79">FormaOS</text>
+  <text x="320" y="180" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#5D6964">Product image placeholder</text>
+</svg>

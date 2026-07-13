@@ -1,0 +1,22 @@
+{
+  "total_catalogue_rows": 180,
+  "mapped_images": 180,
+  "placeholder_count": 0,
+  "image_coverage_percent": 100.0,
+  "coverage_threshold_percent": 70.0,
+  "metadata_path": "data/external/abo/images/metadata/images.csv.gz",
+  "images_root": "data/external/abo/images",
+  "output_csv": "data/curated/abo_mvp_catalogue_with_images.csv",
+  "smoke_data": "app/image-smoke/smoke-items.ts",
+  "broken_paths": [],
+  "duplicate_mappings": [],
+  "missing_image_ids": [],
+  "missing_image_paths": [],
+  "missing_metadata_ids": [],
+  "missing_source_files": [],
+  "unreadable_source_files": [],
+  "invalid_image_references": [],
+  "placeholder_asset_exists": true,
+  "validation_status": "PASS",
+  "passed": true
+}
