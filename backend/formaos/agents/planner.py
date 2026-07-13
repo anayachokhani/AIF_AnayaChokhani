@@ -86,7 +86,7 @@ class OpenRouterPlannerClient:
         model: str = DEFAULT_MODEL,
         timeout: float = 45.0,
     ) -> None:
-        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API", "")
         self.model = model
         self.timeout = timeout
         if not self.api_key:

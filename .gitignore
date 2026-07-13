@@ -42,6 +42,7 @@ yarn-error.log*
 /data/raw/
 /data/external/
 /data/vectorstores/
+/data/saved_designs/
 /artifacts/demo/*.mp4
 /artifacts/demo/*.mov
 /artifacts/demo/*.webm

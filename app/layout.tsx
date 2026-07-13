@@ -14,11 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FormaOS MVP",
-  description: "A multi-page prototype for grounded, buildable interior design plans.",
+  title: "YourSpace",
+  description: "AI-designed homes grounded in real room details, budgets, furniture, and Vastu-aware checks.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/yourspace-logo.png",
+    shortcut: "/yourspace-logo.png",
   },
 };
 

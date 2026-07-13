@@ -24,17 +24,8 @@ export type PlanItem = {
 export const navItems = [
   { href: "/", label: "Overview" },
   { href: "/workspace", label: "Workspace" },
-  { href: "/chat", label: "Chat" },
-  { href: "/planner", label: "Planner" },
   { href: "/catalogue", label: "Catalogue" },
-  { href: "/image-smoke", label: "Images" },
   { href: "/validation", label: "Validation" },
-  { href: "/vastu", label: "Vastu" },
-  { href: "/shopping-list", label: "Shopping List" },
-  { href: "/brief", label: "Export Brief" },
-  { href: "/research", label: "Research" },
-  { href: "/evaluation", label: "Evaluation" },
-  { href: "/roadmap", label: "Roadmap" },
 ];
 
 export const products: Product[] = [

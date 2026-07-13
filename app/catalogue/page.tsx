@@ -4,11 +4,12 @@ export default function CataloguePage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <span className="eyebrow">Grounding layer</span>
-        <h1>Catalogue</h1>
+        <span className="eyebrow">Product grounding</span>
+        <h1>Furniture options the design can actually use.</h1>
         <p>
-          The app uses a cleaned furniture catalogue with categories, prices, dimensions,
-          style tags, material, and finish. This sample powers the planner prototype.
+          FormaOS does not stop at a pretty picture. Each concept is grounded in
+          catalogue items with size, price, material, style tags, and alternatives so
+          the homeowner can move from image to shopping plan.
         </p>
       </section>
 

@@ -2,13 +2,14 @@ from fastapi.testclient import TestClient
 from pathlib import Path
 
 from formaos.api import main as api_main
-from formaos.api.main import app, design_store, state_store
+from formaos.api.main import FileDesignStore, app, state_store
 from formaos.room_state import brief_dimensions_cm, create_room_brief
 
 
 def setup_function() -> None:
     state_store.clear()
-    design_store.clear()
+    api_main.design_store.clear()
+    api_main.session_users.clear()
     api_main.planner_client_override = None
 
 
@@ -206,6 +207,8 @@ def test_all_api_routes_declare_response_models() -> None:
         ("/api/session", "POST"),
         ("/api/session/{session_id}", "GET"),
         ("/api/chat", "POST"),
+        ("/api/concept-image", "POST"),
+        ("/api/designs", "GET"),
         ("/api/design/{design_id}", "GET"),
         ("/api/design/{design_id}/revise", "POST"),
         ("/api/catalogue/search", "GET"),
@@ -243,7 +246,7 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
         style_words=["warm", "wood"],
     )
     api_main.planner_client_override = FakePlannerClient(planner_payload(brief))
-    session = create_session(client, {"brief": brief.model_dump(mode="json")})
+    session = create_session(client, {"brief": brief.model_dump(mode="json"), "user_id": "homeowner-anaya"})
 
     chat_response = client.post(
         "/api/chat",
@@ -288,8 +291,90 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
     assert revised_fetch.json()["design"]["attempt_log"] == revised["attempt_log"]
 
 
+def test_saved_designs_are_listed_and_survive_store_reload(tmp_path, monkeypatch) -> None:
+    store_path = tmp_path / "designs.json"
+    monkeypatch.setattr(api_main, "design_store", FileDesignStore(store_path))
+    client = TestClient(app)
+    brief = create_room_brief(
+        room_type="living room",
+        width=12,
+        depth=14,
+        units="ft",
+        budget_inr=180000,
+        style_words=["warm", "wood"],
+    )
+    api_main.planner_client_override = FakePlannerClient(planner_payload(brief))
+    session = create_session(client, {"brief": brief.model_dump(mode="json"), "user_id": "homeowner-anaya"})
+
+    chat_response = client.post(
+        "/api/chat",
+        json={"session_id": session["session_id"], "message": "Create my design", "max_retries": 2},
+    )
+    assert chat_response.status_code == 200
+    design_id = chat_response.json()["design"]["design_id"]
+    assert chat_response.json()["design"]["user_id"] == "homeowner-anaya"
+
+    list_response = client.get("/api/designs", params={"user_id": "homeowner-anaya"})
+    assert list_response.status_code == 200
+    listed = list_response.json()
+    assert listed["count"] == 1
+    assert listed["designs"][0]["design_id"] == design_id
+    assert listed["designs"][0]["user_id"] == "homeowner-anaya"
+    assert listed["designs"][0]["item_count"] > 0
+
+    other_user_response = client.get("/api/designs", params={"user_id": "homeowner-someone-else"})
+    assert other_user_response.status_code == 200
+    assert other_user_response.json() == {"designs": [], "count": 0}
+
+    monkeypatch.setattr(api_main, "design_store", FileDesignStore(store_path))
+    api_main.state_store.clear()
+
+    get_response = client.get(f"/api/design/{design_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["design"]["room_brief"]["budget_inr"] == 180000
+
+    api_main.planner_client_override = FakePlannerClient(planner_payload(brief))
+    revise_response = client.post(
+        f"/api/design/{design_id}/revise",
+        json={"message": "Revise after reload", "max_retries": 2},
+    )
+    assert revise_response.status_code == 200
+    assert revise_response.json()["design"]["design_id"] == design_id
+    assert revise_response.json()["design"]["user_id"] == "homeowner-anaya"
+
+
+def test_concept_image_returns_prompt_without_openai_key(monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API", raising=False)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/concept-image",
+        json={
+            "project_type": "renovation",
+            "room_type": "living_room",
+            "dimensions": "10 x 12 ft",
+            "style_words": ["warm", "modern"],
+            "constraints": ["kid-friendly"],
+            "questionnaire": {"mood": "calm", "priority": "storage"},
+            "photo_notes": ["room.jpg: existing sofa and north window"],
+            "vastu_enabled": True,
+            "grounded_design": None,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "prompt_only"
+    assert payload["image_data_url"] is None
+    assert "renovation" in payload["image_prompt"]
+    assert "Vastu-aware placement" in payload["image_prompt"]
+    assert_no_secret_exposure(payload)
+
+
 def test_chat_returns_missing_api_key_error_without_backend_key(monkeypatch) -> None:
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API", raising=False)
     client = TestClient(app)
     session = create_session(
         client,

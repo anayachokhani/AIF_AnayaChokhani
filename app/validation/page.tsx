@@ -30,11 +30,12 @@ export default function ValidationPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <span className="eyebrow">Critic layer</span>
-        <h1>Validation</h1>
+        <span className="eyebrow">Design checks</span>
+        <h1>Every generated room gets checked before it is saved.</h1>
         <p>
-          FormaOS treats the visual as a concept and the validation results as the source
-          of truth for whether the plan is buildable.
+          The image is only the concept. The saved plan carries the practical checks:
+          product sourceability, room fit, total budget, category coverage, and optional
+          Vastu guidance.
         </p>
       </section>
 
@@ -55,9 +56,9 @@ export default function ValidationPage() {
       <section className="logic-panel">
         <h2>Revision rule</h2>
         <p>
-          If any hard check fails, the Reviser swaps the failing item, lowers optional
-          accents, or simplifies the room plan. The MVP uses a retry cap so the system
-          stays predictable during demos.
+          If a hard check fails, FormaOS revises the plan by swapping the failing item,
+          lowering optional accents, or simplifying the room plan. Failed versions are
+          still saved with repair notes so the homeowner can understand what changed.
         </p>
       </section>
     </main>

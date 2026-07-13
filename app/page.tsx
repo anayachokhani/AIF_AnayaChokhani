@@ -1,64 +1,82 @@
 import Link from "next/link";
-import { buildSteps, metrics } from "./data";
+import { BeforeAfterSlider } from "./components/BeforeAfterSlider";
+
+const steps = [
+  ["Upload", "1. Upload your space", "Add photos and room dimensions."],
+  ["Chat", "2. Tell us your style", "Answer a few quick questions."],
+  ["Sparkles", "3. Get AI designs", "Beautiful concepts tailored to your space."],
+  ["Bag", "4. Shop real items", "Handpicked furniture that fits your room and budget."],
+];
+
+const benefits = [
+  ["Tag", "Real items"],
+  ["Leaf", "Vastu aware"],
+  ["Wallet", "Budget smart"],
+];
 
 export default function OverviewPage() {
   return (
-    <main className="page-shell">
-      <section className="hero-section">
-        <div className="hero-copy">
-          <span className="eyebrow">Grounded home design MVP</span>
-          <h1>FormaOS turns a room idea into a buildable plan.</h1>
-          <p>
-            The prototype focuses on one sharp claim: every suggested item should be real,
-            priced, dimensioned, and checked against the user's room before it reaches the
-            final brief.
-          </p>
-          <div className="hero-actions">
-            <Link className="primary-button" href="/planner">
-              Open planner
-            </Link>
-            <Link className="secondary-button" href="/validation">
-              View checks
-            </Link>
+    <main className="ys-landing">
+      <section className="ys-landing-card">
+        <header className="ys-landing-nav">
+          <Link className="ys-logo" href="/" aria-label="YourSpace home">
+            <img className="ys-logo-image" src="/yourspace-logo.png" alt="" />
+            <strong>YourSpace</strong>
+          </Link>
+          <nav aria-label="Landing navigation">
+            <a href="#how">How it works</a>
+            <a href="#styles">Styles</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#about">About us</a>
+          </nav>
+          <div>
+            <Link className="ys-outline-button" href="/login?next=/workspace">Log in</Link>
+            <Link className="ys-solid-button" href="/login?next=/workspace">Get started</Link>
+          </div>
+        </header>
+
+        <div className="ys-hero-grid">
+          <div className="ys-hero-copy">
+            <h1>AI-designed homes, <span>grounded</span> in reality.</h1>
+            <p>
+              Upload your space, tell us your style and budget, and get beautiful
+              designs with real furniture that fit your home.
+            </p>
+            <div className="ys-hero-actions">
+              <Link className="ys-solid-button large" href="/login?next=/workspace">Start designing</Link>
+              <Link className="ys-outline-button large" href="#how">See how it works</Link>
+            </div>
+            <div className="ys-benefits">
+              {benefits.map(([icon, label]) => (
+                <span key={label} data-icon={icon}>{label}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="ys-hero-room" aria-label="Designed living room preview">
+            <BeforeAfterSlider />
+            <div className="ys-hero-stats">
+              <article><span>Est. budget</span><strong>Rs 2,45,000</strong></article>
+              <article><span>Items used</span><strong>24</strong></article>
+              <article><span>Fits your room</span><strong>Perfect</strong></article>
+              <article><span>Vastu score</span><strong>92/100</strong></article>
+            </div>
           </div>
         </div>
-        <div className="hero-board" aria-label="FormaOS workflow summary">
-          {buildSteps.map((step, index) => (
-            <div className="step-card" key={step}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <p>{step}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="section-grid">
-        <article className="feature-panel">
-          <h2>What is different</h2>
-          <p>
-            A raw image generator can produce a beautiful scene, but it does not know
-            whether the sofa exists, fits, or stays within budget. FormaOS puts retrieval
-            and verification underneath the visual layer.
-          </p>
-        </article>
-        <article className="feature-panel">
-          <h2>MVP scope</h2>
-          <p>
-            The first version is living-room only, with a curated catalogue, 2D fit
-            checking, budget checks, optional Vastu guidance, and a shareable design
-            brief.
-          </p>
-        </article>
-      </section>
-
-      <section className="metric-strip">
-        {metrics.map((metric) => (
-          <article key={metric.label}>
-            <strong>{metric.value}</strong>
-            <span>{metric.label}</span>
-            <p>{metric.note}</p>
-          </article>
-        ))}
+        <section className="ys-four-steps" id="how">
+          <h2>Design your space in <span>4</span> simple steps</h2>
+          <div>
+            {steps.map(([icon, title, text]) => (
+              <article key={title}>
+                <span className="ys-step-icon" data-icon={icon} />
+                <strong>{title}</strong>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
   );

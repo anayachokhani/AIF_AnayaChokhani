@@ -29,11 +29,11 @@ test("server-renders the FormaOS overview", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>FormaOS MVP<\/title>/i);
-  assert.match(html, /FormaOS turns a room idea into a buildable plan/);
-  assert.match(html, /Overview/);
-  assert.match(html, /Planner/);
-  assert.match(html, /Catalogue/);
+  assert.match(html, /<title>YourSpace<\/title>/i);
+  assert.match(html, /AI-designed homes/);
+  assert.match(html, /grounded/);
+  assert.match(html, /Start designing/);
+  assert.match(html, /Design your space in/);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
 });
 
@@ -44,9 +44,20 @@ test("keeps the starter preview removed from product files", async () => {
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(layout, /title:\s*"FormaOS MVP"/);
-  assert.match(page, /Grounded home design MVP/);
+  assert.match(layout, /title:\s*"YourSpace"/);
+  assert.match(page, /AI-designed homes/);
+  assert.match(page, /Design your space in/);
   assert.doesNotMatch(page + layout + packageJson, /SkeletonPreview|codex-preview|react-loading-skeleton/);
+});
+
+test("server-renders the homeowner login shell", async () => {
+  const response = await render("/login?next=/workspace");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Homeowner account/);
+  assert.match(html, /Continue as homeowner/);
+  assert.match(html, /Saved designs/);
 });
 
 test("server-renders the T18 workspace shell", async () => {
@@ -55,7 +66,7 @@ test("server-renders the T18 workspace shell", async () => {
 
   const html = await response.text();
   assert.match(html, /FormaOS design workspace/);
-  assert.match(html, /Room setup and chat/);
+  assert.match(html, /get to know your space/);
   assert.match(html, /planning/);
   assert.match(html, /designing/);
   assert.match(html, /grounding/);

@@ -162,6 +162,7 @@ def test_planner_rejects_changed_room_facts_after_retry_with_typed_error() -> No
 
 def test_openrouter_client_requires_server_side_api_key(monkeypatch) -> None:
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API", raising=False)
     with pytest.raises(RuntimeError, match="missing_api_key"):
         OpenRouterPlannerClient()
 
@@ -200,8 +201,8 @@ def test_prompt_requests_strict_json_and_allowed_categories() -> None:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("OPENROUTER_API_KEY"),
-    reason="OPENROUTER_API_KEY is not set; skipping live OpenRouter integration test.",
+    not (os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API")),
+    reason="OPENROUTER_API_KEY or OPENROUTER_API is not set; skipping live OpenRouter integration test.",
 )
 def test_openrouter_integration_when_api_key_present() -> None:
     brief = create_room_brief(
