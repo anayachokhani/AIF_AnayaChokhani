@@ -18,6 +18,33 @@ MIN_ALTERNATIVES = 2
 MAX_ALTERNATIVES = 3
 FailureCode = Literal["category", "width", "depth", "dimensions", "budget", "retrieval"]
 
+ROOM_CATEGORY_TITLE_RULES: dict[tuple[str, str], tuple[set[str], set[str]]] = {
+    ("bedroom", "storage"): (
+        {"wardrobe", "dresser", "drawer", "organizer", "shelf", "cabinet"},
+        {"coffee table", "ottoman", "bench", "desk", "container", "folder", "recliner"},
+    ),
+    ("bedroom", "cabinet"): (
+        {"wardrobe", "dresser", "drawer", "sideboard", "bookcase", "cabinet"},
+        {"media", "tv", "filing", "shoe"},
+    ),
+    ("bedroom", "table"): (
+        {"side table", "bedside", "nightstand"},
+        {"coffee table", "dining"},
+    ),
+    ("living_room", "storage"): (
+        {"media", "console", "cabinet", "sideboard", "shelf"},
+        {"folder", "container", "desk", "recliner"},
+    ),
+    ("study", "storage"): (
+        {"file", "drawer", "organizer", "shelf", "bookcase", "cabinet"},
+        {"coffee table", "ottoman", "bench", "container"},
+    ),
+    ("study", "cabinet"): (
+        {"file", "bookcase", "drawer", "cabinet", "shelf"},
+        {"media", "tv", "shoe"},
+    ),
+}
+
 
 class GrounderValidationError(ValueError):
     def __init__(self, message: str, *, original_error: Exception | None = None) -> None:
@@ -88,6 +115,8 @@ def compute_slot_limits(brief: RoomBrief, slot: DesignSlot) -> SlotConstraints:
     constraint_multiplier = 1.0
     if any(term in constraint_text for term in ["play", "kid", "child", "circulation", "walkway", "wheelchair"]):
         constraint_multiplier = 0.9
+    if slot.category in {"sofa", "loveseat", "bed"}:
+        constraint_multiplier = max(constraint_multiplier, 0.95)
     placement_limits: dict[Direction | None, tuple[float, float]] = {
         "C": (dims.width_cm * 0.8, dims.depth_cm * 0.65),
         "N": (dims.width_cm * 0.85, dims.depth_cm * 0.4),
@@ -101,6 +130,9 @@ def compute_slot_limits(brief: RoomBrief, slot: DesignSlot) -> SlotConstraints:
         None: (dims.width_cm * 0.75, dims.depth_cm * 0.6),
     }
     placement_width, placement_depth = placement_limits[slot.placement_hint]
+    if slot.category == "bed" and slot.placement_hint in {"NE", "NW", "SE", "SW"}:
+        placement_width = dims.width_cm * 0.75
+        placement_depth = dims.depth_cm * 0.75
     target_width = slot.target_width_cm if slot.target_width_cm is not None else placement_width
     target_depth = slot.target_depth_cm if slot.target_depth_cm is not None else placement_depth
     return SlotConstraints(
@@ -113,6 +145,17 @@ def compute_slot_limits(brief: RoomBrief, slot: DesignSlot) -> SlotConstraints:
 def slot_query(slot: DesignSlot) -> str:
     parts = [slot.style_text, slot.category, *slot.must_have_constraints]
     return " ".join(part for part in parts if part).strip() or slot.category
+
+
+def room_relevance_score(brief: RoomBrief, slot: DesignSlot, item: dict[str, Any]) -> tuple[float, float]:
+    preferred, discouraged = ROOM_CATEGORY_TITLE_RULES.get((brief.room_type, slot.category), (set(), set()))
+    title = str(item.get("title") or "").lower()
+    semantic_penalty = 0.0
+    if preferred and not any(term in title for term in preferred):
+        semantic_penalty += 2.0
+    semantic_penalty -= sum(1.0 for term in preferred if term in title)
+    semantic_penalty += sum(8.0 for term in discouraged if term in title)
+    return semantic_penalty, float(item.get("distance") or 0.0)
 
 
 def catalogue_item_from_metadata(metadata: dict[str, Any], placement_zone: Direction | None = None) -> CatalogueItem:
@@ -213,9 +256,10 @@ def ground_slot(
         max_width_cm=constraints.max_width_cm,
         max_depth_cm=constraints.max_depth_cm,
         max_price_inr=constraints.max_price_inr,
-        k=MAX_ALTERNATIVES + 1,
+        k=15,
         chroma_path=chroma_path,
     )
+    results = sorted(results, key=lambda item: room_relevance_score(brief, slot, item))
     if len(results) < MIN_ALTERNATIVES + 1:
         return GroundedSlot(
             slot=slot,

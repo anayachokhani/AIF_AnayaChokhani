@@ -4,6 +4,7 @@ export type Product = {
   id: string;
   category: string;
   name: string;
+  imageSrc: string;
   price: number;
   width: number;
   depth: number;
@@ -23,9 +24,7 @@ export type PlanItem = {
 
 export const navItems = [
   { href: "/", label: "Overview" },
-  { href: "/workspace", label: "Workspace" },
-  { href: "/catalogue", label: "Catalogue" },
-  { href: "/validation", label: "Validation" },
+  { href: "/workspace", label: "My projects" },
 ];
 
 export const products: Product[] = [
@@ -33,6 +32,7 @@ export const products: Product[] = [
     id: "SOF-101",
     category: "Sofa",
     name: "Kavya compact three-seat sofa",
+    imageSrc: "/product-images/B082VLYQWX-71_YMq06qWL.jpg",
     price: 32000,
     width: 208,
     depth: 88,
@@ -45,6 +45,7 @@ export const products: Product[] = [
     id: "SOF-118",
     category: "Sofa",
     name: "Nira apartment loveseat",
+    imageSrc: "/product-images/B082VMZGDG-71fGIrfquNL.jpg",
     price: 24500,
     width: 154,
     depth: 82,
@@ -57,6 +58,7 @@ export const products: Product[] = [
     id: "TBL-204",
     category: "Coffee table",
     name: "Aro low storage coffee table",
+    imageSrc: "/product-images/B072ZLCB3M-81Xh_yZvD1L.jpg",
     price: 9400,
     width: 96,
     depth: 54,
@@ -69,6 +71,7 @@ export const products: Product[] = [
     id: "TBL-219",
     category: "Coffee table",
     name: "Mira round nesting table",
+    imageSrc: "/product-images/B07S8CJGN5-7149ykWF_TL.jpg",
     price: 7200,
     width: 72,
     depth: 72,
@@ -81,6 +84,7 @@ export const products: Product[] = [
     id: "RUG-303",
     category: "Rug",
     name: "Varan handloom flatweave rug",
+    imageSrc: "/product-images/B07B4WKMB1-A141kOyqj3L.jpg",
     price: 7800,
     width: 180,
     depth: 240,
@@ -93,6 +97,7 @@ export const products: Product[] = [
     id: "RUG-318",
     category: "Rug",
     name: "Tala washable area rug",
+    imageSrc: "/product-images/B07R4T5PN8-81s9mVh_FUL.jpg",
     price: 5400,
     width: 150,
     depth: 210,
@@ -105,6 +110,7 @@ export const products: Product[] = [
     id: "STR-412",
     category: "Storage",
     name: "Ira low media console",
+    imageSrc: "/product-images/B082JH6LSF-71S7YSK7N_L.jpg",
     price: 18500,
     width: 168,
     depth: 42,
@@ -117,6 +123,7 @@ export const products: Product[] = [
     id: "STR-433",
     category: "Storage",
     name: "Duo wall shelf and cabinet",
+    imageSrc: "/product-images/B07TTY3FYP-81_lG91RnGL.jpg",
     price: 12800,
     width: 120,
     depth: 32,
@@ -129,6 +136,7 @@ export const products: Product[] = [
     id: "LGT-504",
     category: "Lighting",
     name: "Soma brass floor lamp",
+    imageSrc: "/product-images/B07QB7HXXF-81iOdMpRYyL.jpg",
     price: 8900,
     width: 42,
     depth: 42,
@@ -141,6 +149,7 @@ export const products: Product[] = [
     id: "LGT-526",
     category: "Lighting",
     name: "Luma ceramic table lamp",
+    imageSrc: "/product-images/B07B4SC2KW-71bXD_d4rqL.jpg",
     price: 4600,
     width: 28,
     depth: 28,

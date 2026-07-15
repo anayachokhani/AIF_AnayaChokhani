@@ -216,3 +216,6 @@ class InMemoryStateStore:
 
     def clear(self) -> None:
         self._states.clear()
+
+    def delete(self, session_id: str) -> None:
+        self._states.pop(session_id, None)

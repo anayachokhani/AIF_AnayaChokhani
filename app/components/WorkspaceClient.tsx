@@ -2,23 +2,29 @@
 
 import type { FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../data";
+import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import { ZoneGrid, type ZoneGridItem } from "./ZoneGrid";
 
 const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"] as const;
 const units = ["ft", "m", "cm"] as const;
 const progressStates = ["planning", "designing", "grounding", "checking", "revising", "passed", "failed", "error"] as const;
-const tabs = ["items", "vastu", "shopping"] as const;
-const wizardSteps = ["Space", "Style", "Preferences", "Budget", "Review"] as const;
+const tabs = ["shopping", "vastu"] as const;
+const wizardSteps = ["Space", "Style", "Preferences", "Vastu", "Budget", "Review"] as const;
 const API_BASE = process.env.NEXT_PUBLIC_FORMAOS_API_BASE ?? "http://localhost:8000";
-const USER_STORAGE_KEY = "formaos_homeowner";
+const MIN_BUDGET = 50000;
+const MAX_BUDGET = 500000;
+const BUDGET_STEP = 5000;
 const apiErrorStates = [
   "invalid_brief",
   "no_catalogue_results",
   "retry_exhausted",
   "graph_failure",
   "missing_api_key",
+  "image_service_unavailable",
+  "image_generation_failed",
   "general error",
 ] as const;
 
@@ -43,7 +49,8 @@ type CatalogueItem = {
 };
 
 type GroundedSlot = {
-  slot: { slot_id: string; category: string; placement_hint?: Direction | null };
+  slot: { slot_id: string; category: string; purpose?: string; style_text?: string; placement_hint?: Direction | null };
+  constraints?: { max_width_cm: number; max_depth_cm: number };
   placement_zone: Direction;
   selected_item?: CatalogueItem | null;
   alternatives: CatalogueItem[];
@@ -70,8 +77,27 @@ type VastuItemResult = {
 type BackendDesign = {
   design_id: string;
   session_id: string;
+  project_id: string;
+  project_name: string;
   user_id?: string | null;
   generated_at: string;
+  room_brief: {
+    room_type: string;
+    width: number;
+    depth: number;
+    units: Unit;
+    budget_inr: number;
+    style_words: string[];
+    constraints: string[];
+    vastu_enabled: boolean;
+    main_door_direction?: Direction | null;
+    compass_direction?: Direction | null;
+  };
+  concept_image?: ConceptImage | null;
+  concept_history?: ConceptRevision[];
+  source_images?: string[];
+  last_revision_request?: string;
+  chat_messages?: Array<{ role: "user" | "assistant"; content: string }>;
   status: "passed" | "failed";
   grounder_output: { grounded_slots: GroundedSlot[] };
   critic_verdict: {
@@ -79,6 +105,7 @@ type BackendDesign = {
     total_price_inr: number;
     fit: { status: string; notes: string[] };
     budget: { status: string; notes: string[] };
+    sourceability: { status: string; notes: string[] };
     vastu: { status: string; notes: string[] };
     vastu_result?: { score: number; item_results: VastuItemResult[]; notes: string[] } | null;
   };
@@ -87,6 +114,8 @@ type BackendDesign = {
 type DesignSummary = {
   design_id: string;
   session_id: string;
+  project_id: string;
+  project_name: string;
   user_id?: string | null;
   generated_at: string;
   status: string;
@@ -94,6 +123,8 @@ type DesignSummary = {
   total_price_inr: number;
   item_count: number;
   style_words: string[];
+  preview_image_data_url?: string | null;
+  preview_image_path?: string | null;
 };
 
 type StoredHomeowner = {
@@ -105,7 +136,33 @@ type StoredHomeowner = {
 type PhotoNote = {
   name: string;
   url: string;
+  dataUrl: string;
   note: string;
+};
+
+type StyleCard = {
+  label: string;
+  imageSrc: string;
+  cues: string;
+  palette: Array<{ name: string; hex: string }>;
+};
+
+type FinishScheduleItem = {
+  category: string;
+  recommendation: string;
+  quantity: string;
+  note: string;
+  colourName: string;
+  hex: string;
+  link: string;
+  linkLabel: string;
+};
+
+type ProjectChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  createdAt: string;
 };
 
 type ConceptImage = {
@@ -113,6 +170,24 @@ type ConceptImage = {
   image_prompt: string;
   image_data_url?: string | null;
   notes: string[];
+  revision_id?: string | null;
+  concept_history?: ConceptRevision[];
+};
+
+type RevisionProduct = Partial<CatalogueItem> & {
+  category: string;
+  item_id: string;
+  title: string;
+};
+
+type ConceptRevision = ConceptImage & {
+  revision_id: string;
+  version: number;
+  label: string;
+  revision_text: string;
+  generated_at: string;
+  source: string;
+  selected_products: RevisionProduct[];
 };
 
 class ApiRequestError extends Error {
@@ -126,6 +201,10 @@ class ApiRequestError extends Error {
 
 function apiUrl(path: string) {
   return `${API_BASE}${path}`;
+}
+
+function apiFetch(path: string, init?: RequestInit) {
+  return fetch(apiUrl(path), { ...init, credentials: "include" });
 }
 
 function styleWords(value: string) {
@@ -159,8 +238,157 @@ function safeImagePath(item: CatalogueItem) {
   return "/product-placeholder.svg";
 }
 
+function productSearchUrl(item: CatalogueItem) {
+  return `https://www.amazon.in/s?k=${encodeURIComponent(`${item.title} ${item.material ?? ""} ${item.color ?? ""}`.trim())}`;
+}
+
+function safePreviewPath(summary: DesignSummary) {
+  if (summary.preview_image_data_url) return summary.preview_image_data_url;
+  if (summary.preview_image_path) {
+    return summary.preview_image_path.startsWith("/") ? summary.preview_image_path : `/${summary.preview_image_path}`;
+  }
+  return "/product-placeholder.svg";
+}
+
 function selectedSlots(design: BackendDesign | null) {
   return design?.grounder_output.grounded_slots.filter((slot) => slot.selected_item) ?? [];
+}
+
+function storedMessages(design: BackendDesign): ProjectChatMessage[] {
+  return (design.chat_messages ?? []).map((message, index) => ({
+    id: `${design.design_id}-message-${index}`,
+    role: message.role,
+    text: message.content,
+    createdAt: design.generated_at,
+  }));
+}
+
+function selectedStyleCues(styles: string[]) {
+  return styles
+    .map((style) => styleCards.find((styleCard) => styleCard.label === style)?.cues)
+    .filter(Boolean)
+    .join("; ");
+}
+
+function selectedStylePalettes(styles: string[]) {
+  return styles
+    .map((style) => styleCards.find((styleCard) => styleCard.label === style))
+    .filter((styleCard): styleCard is StyleCard => Boolean(styleCard));
+}
+
+function finishScheduleFor(styles: string[], roomType: string, slots: GroundedSlot[]): FinishScheduleItem[] {
+  const normalizedStyles = styles.map((style) => style.toLowerCase());
+  const has = (style: string) => normalizedStyles.includes(style);
+  const leadPalette = styleCards.find((styleCard) => styleCard.label === styles[0])?.palette ?? [
+    { name: "Porcelain", hex: "#E9E5DC" }, { name: "Walnut", hex: "#76523B" }, { name: "Olive", hex: "#6F765A" },
+    { name: "Charcoal", hex: "#333734" }, { name: "Burnt Rust", hex: "#B85C3E" },
+  ];
+  const [base, material, secondary, contrast, accent] = leadPalette;
+  const palette = {
+    wall: [base.name, base.hex],
+    floor: [material.name, material.hex],
+    secondary: [secondary.name, secondary.hex],
+    contrast: [contrast.name, contrast.hex],
+    accent: [accent.name, accent.hex],
+  };
+  const roomLabel = roomType.replace("_", " ");
+  const selectedCategories = new Set(slots.map((slot) => slot.slot.category));
+  const sourceableNote = selectedCategories.size
+    ? `Coordinates with selected ${Array.from(selectedCategories).join(", ")}.`
+    : "Coordinates with selected sourceable furniture once generated.";
+
+  return [
+    {
+      category: "Wall paint",
+      recommendation: `${palette.wall[0]} washable low-sheen emulsion`,
+      quantity: "1 main wall colour + 1 optional accent",
+      note: "Use low-sheen washable paint for homeowner maintenance.",
+      colourName: palette.wall[0],
+      hex: palette.wall[1],
+      link: "https://www.asianpaints.com/catalogue/colour-catalogue.html",
+      linkLabel: "Match paint colour",
+    },
+    {
+      category: "Flooring",
+      recommendation: `${palette.floor[0]} matte wood or stone-look finish`,
+      quantity: "Room floor area + 10% cutting allowance",
+      note: `Choose a durable finish suited to a ${roomLabel}; confirm the sample in daylight before ordering.`,
+      colourName: palette.floor[0],
+      hex: palette.floor[1],
+      link: `https://www.amazon.in/s?k=${encodeURIComponent(`${palette.floor[0]} interior flooring`)}`,
+      linkLabel: "Find flooring",
+    },
+    {
+      category: "Tiles",
+      recommendation: `${palette.wall[0]} or ${palette.floor[0]} matte large-format tile`,
+      quantity: "Feature or wet-zone area + 12% allowance",
+      note: "Use one restrained tile family so it matches the generated room instead of adding a new pattern.",
+      colourName: palette.wall[0],
+      hex: palette.wall[1],
+      link: `https://www.amazon.in/s?k=${encodeURIComponent(`${palette.wall[0]} matte interior tiles`)}`,
+      linkLabel: "Find tiles",
+    },
+    {
+      category: "Window treatments",
+      recommendation: has("industrial") ? "linen curtains on black rods" : "linen or cotton curtains in warm off-white",
+      quantity: "1 set per window",
+      note: "Keep curtain length floor-touching where practical.",
+      colourName: palette.secondary[0],
+      hex: palette.secondary[1],
+      link: "https://www.amazon.in/s?k=warm+linen+floor+length+curtains",
+      linkLabel: "Find curtains",
+    },
+    {
+      category: "Plants",
+      recommendation: has("minimal") || has("japandi") ? "one sculptural floor plant plus one small tabletop plant" : "two floor plants plus one tabletop plant",
+      quantity: "2-3 plants",
+      note: "Place larger greenery near natural light and keep circulation clear.",
+      colourName: palette.secondary[0],
+      hex: palette.secondary[1],
+      link: "https://www.ugaoo.com/collections/indoor-plants",
+      linkLabel: "Browse plants",
+    },
+    {
+      category: "Wall art",
+      recommendation: has("classic") ? "framed landscape or botanical artwork" : has("boho") ? "woven art or earthy abstract print" : "large abstract print matched to the palette",
+      quantity: "1 large piece or 2 balanced frames",
+      note: `Scale art to the ${roomLabel} wall instead of using small scattered frames.`,
+      colourName: palette.contrast[0],
+      hex: palette.contrast[1],
+      link: `https://www.amazon.in/s?k=${encodeURIComponent(`${palette.accent[0]} large wall art`)}`,
+      linkLabel: "Find wall art",
+    },
+    {
+      category: "Showpieces",
+      recommendation: has("japandi") || has("minimal") ? "ceramic vessel, stone bowl, one tray" : "ceramic vessels, books, tray, candle holder, small sculptural object",
+      quantity: "3-5 objects",
+      note: "Group objects in odd numbers and leave empty surface area.",
+      colourName: palette.accent[0],
+      hex: palette.accent[1],
+      link: `https://www.amazon.in/s?k=${encodeURIComponent(`${palette.accent[0]} ceramic home decor`)}`,
+      linkLabel: "Find decor",
+    },
+    {
+      category: "Soft furnishings",
+      recommendation: has("boho") ? "patterned cushions, textured throw, layered rug tones" : "2-4 cushions and one throw in the selected palette",
+      quantity: "3-5 pieces",
+      note: sourceableNote,
+      colourName: palette.accent[0],
+      hex: palette.accent[1],
+      link: `https://www.amazon.in/s?k=${encodeURIComponent(`${palette.accent[0]} cushion throw rug`)}`,
+      linkLabel: "Find textiles",
+    },
+    {
+      category: "Lighting layer",
+      recommendation: "warm 2700K bulbs, one ambient source, one task or accent source",
+      quantity: "2 lighting layers minimum",
+      note: "Avoid cool white bulbs; they make generated and real rooms feel less residential.",
+      colourName: "Warm White",
+      hex: "#FFD8A8",
+      link: "https://www.amazon.in/s?k=2700k+warm+white+interior+lighting",
+      linkLabel: "Find lighting",
+    },
+  ];
 }
 
 function errorMessage(payload: unknown, fallback: string) {
@@ -175,34 +403,115 @@ function errorDesign(payload: unknown) {
   return (payload as { detail?: { design?: BackendDesign } }).detail?.design;
 }
 
-const styleOptions = ["Modern", "Minimal", "Scandinavian", "Boho", "Contemporary", "Classic", "Japandi", "Industrial"];
+const styleCards: StyleCard[] = [
+  {
+    label: "Modern",
+    imageSrc: "/style-images/modern.png",
+    cues: "clean lines, warm neutrals, walnut, black metal, restrained art",
+    palette: [
+      { name: "Porcelain", hex: "#E9E5DC" }, { name: "Walnut", hex: "#76523B" }, { name: "Olive", hex: "#6F765A" },
+      { name: "Charcoal", hex: "#333734" }, { name: "Burnt Rust", hex: "#B85C3E" },
+    ],
+  },
+  {
+    label: "Minimal",
+    imageSrc: "/style-images/minimal.png",
+    cues: "negative space, pale oak, linen, hidden storage, very few objects",
+    palette: [
+      { name: "Chalk", hex: "#F4F1E8" }, { name: "Pale Oak", hex: "#D4C09D" }, { name: "Mushroom", hex: "#B4A99A" },
+      { name: "Graphite", hex: "#3B403D" }, { name: "Soft Sage", hex: "#89917D" },
+    ],
+  },
+  {
+    label: "Scandinavian",
+    imageSrc: "/style-images/scandinavian.png",
+    cues: "light wood, wool, soft grey, airy storage, cozy practical layers",
+    palette: [
+      { name: "Nordic White", hex: "#F4F3EE" }, { name: "Blonde Oak", hex: "#D6BE96" }, { name: "Mist", hex: "#B7C1BD" },
+      { name: "Fjord Blue", hex: "#728A96" }, { name: "Soft Ochre", hex: "#C49A4A" },
+    ],
+  },
+  {
+    label: "Boho",
+    imageSrc: "/style-images/boho.png",
+    cues: "rattan, jute, terracotta, patterned textiles, plants, collected decor",
+    palette: [
+      { name: "Warm Ivory", hex: "#F1E7D4" }, { name: "Terracotta", hex: "#B85F42" }, { name: "Saffron", hex: "#D39A35" },
+      { name: "Deep Teal", hex: "#376B68" }, { name: "Leaf Green", hex: "#52634A" },
+    ],
+  },
+  {
+    label: "Contemporary",
+    imageSrc: "/style-images/contemporary.png",
+    cues: "curved forms, statement lighting, abstract art, mixed stone and wood",
+    palette: [
+      { name: "Soft Taupe", hex: "#C8BAAA" }, { name: "American Walnut", hex: "#77533B" }, { name: "Ink", hex: "#30363A" },
+      { name: "Burnt Rust", hex: "#A8563D" }, { name: "Mineral Blue", hex: "#647D86" },
+    ],
+  },
+  {
+    label: "Classic",
+    imageSrc: "/style-images/classic.png",
+    cues: "symmetry, carved wood, brass, framed art, tailored upholstery",
+    palette: [
+      { name: "Soft Cream", hex: "#F2E8D5" }, { name: "Warm Walnut", hex: "#76513A" }, { name: "Heritage Navy", hex: "#34465B" },
+      { name: "Oxblood", hex: "#743E3D" }, { name: "Antique Brass", hex: "#B08D57" },
+    ],
+  },
+  {
+    label: "Japandi",
+    imageSrc: "/style-images/japandi.png",
+    cues: "low furniture, slatted wood, linen, clay, stone, muted earth tones",
+    palette: [
+      { name: "Limewash", hex: "#D9CFBD" }, { name: "Natural Oak", hex: "#C4A477" }, { name: "Clay", hex: "#A8684E" },
+      { name: "Muted Olive", hex: "#727760" }, { name: "Sumi Ink", hex: "#343635" },
+    ],
+  },
+  {
+    label: "Industrial",
+    imageSrc: "/style-images/industrial.png",
+    cues: "cognac leather, black steel, brick, concrete, reclaimed wood",
+    palette: [
+      { name: "Concrete", hex: "#A7A39D" }, { name: "Black Steel", hex: "#282B2C" }, { name: "Cognac", hex: "#9A5F3D" },
+      { name: "Brick", hex: "#8E4937" }, { name: "Aged Brass", hex: "#A4844C" },
+    ],
+  },
+];
+const styleOptions = styleCards.map((styleCard) => styleCard.label);
 const preferenceOptions = ["More storage", "Natural light", "Open layout", "Greenery", "Warm tones", "Modern look", "Smart lighting", "Kid friendly"];
-const sampleRooms = [
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=80",
-];
-const projectImages = [
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=560&q=80",
-  "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=560&q=80",
-  "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=560&q=80",
-  "https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=560&q=80",
-];
+
+function newProjectId() {
+  return `project-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function newChatMessage(role: ProjectChatMessage["role"], text: string): ProjectChatMessage {
+  return {
+    id: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    role,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export function WorkspaceClient() {
+  const router = useRouter();
   const [homeowner, setHomeowner] = useState<StoredHomeowner | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [step, setStep] = useState(0);
-  const [activeTab, setActiveTab] = useState<Tab>("items");
+  const [activeTab, setActiveTab] = useState<Tab>("shopping");
   const [progress, setProgress] = useState<ProgressState>("planning");
   const [sessionId, setSessionId] = useState("");
+  const [currentProjectId, setCurrentProjectId] = useState(() => newProjectId());
   const [design, setDesign] = useState<BackendDesign | null>(null);
   const [conceptImage, setConceptImage] = useState<ConceptImage | null>(null);
+  const [selectedRevisionId, setSelectedRevisionId] = useState("");
   const [savedDesigns, setSavedDesigns] = useState<DesignSummary[]>([]);
+  const [projectChats, setProjectChats] = useState<Record<string, ProjectChatMessage[]>>({});
   const [photos, setPhotos] = useState<PhotoNote[]>([]);
   const [loading, setLoading] = useState(false);
+  const [conceptLoading, setConceptLoading] = useState(false);
+  const [selectingItemId, setSelectingItemId] = useState("");
+  const [deletingProjectId, setDeletingProjectId] = useState("");
   const [error, setError] = useState("");
   const [roomType, setRoomType] = useState("living_room");
   const [unit, setUnit] = useState<Unit>("ft");
@@ -210,17 +519,19 @@ export function WorkspaceClient() {
   const [depth, setDepth] = useState(18);
   const [height, setHeight] = useState(10);
   const [budget, setBudget] = useState(245000);
+  const [budgetInput, setBudgetInput] = useState("245000");
   const [selectedStyles, setSelectedStyles] = useState(["Modern"]);
   const [selectedPreferences, setSelectedPreferences] = useState(["More storage", "Natural light", "Greenery"]);
   const [vastuEnabled, setVastuEnabled] = useState(true);
   const [mainDoor, setMainDoor] = useState<Direction>("N");
   const [compass, setCompass] = useState<Direction>("N");
-  const [revisionMessage, setRevisionMessage] = useState("Make this calmer and keep the same budget.");
+  const [chatInput, setChatInput] = useState("Make this calmer and keep the same budget.");
 
   const style = [...selectedStyles, ...selectedPreferences].join(" ");
   const designGoal = `Design my ${roomType.replace("_", " ")} with ${selectedStyles.join(", ")} style.`;
   const message = `Create a saved design with ${selectedPreferences.join(", ")}.`;
   const dimensionsLabel = `${depth} ft x ${width} ft x ${height} ft`;
+  const projectName = `${roomType.replace("_", " ")} - ${selectedStyles.slice(0, 2).join(", ") || "New design"}`;
   const photoNotes = photos.map((photo) => `${photo.name}: ${photo.note}`);
   const slots = selectedSlots(design);
   const visibleTotal = slots.reduce((sum, slot) => sum + (slot.selected_item?.price_inr ?? 0), 0);
@@ -228,6 +539,28 @@ export function WorkspaceClient() {
   const exactTotal = design ? visibleTotal === backendTotal : false;
   const budgetPercent = budget > 0 ? Math.min(100, Math.round(((design ? backendTotal : budget) / budget) * 100)) : 0;
   const budgetStatus = design?.critic_verdict.budget.status ?? "waiting";
+  const vastuScore = design?.critic_verdict.vastu_result?.score ?? 0;
+  const styleCueText = selectedStyleCues(selectedStyles);
+  const stylePalettes = selectedStylePalettes(selectedStyles);
+  const leadStylePalette = stylePalettes[0];
+  const palettePrompt = leadStylePalette
+    ? `${leadStylePalette.label}: ${leadStylePalette.palette.map((colour) => `${colour.name} ${colour.hex}`).join(", ")}`
+    : "";
+  const finishSchedule = finishScheduleFor(selectedStyles, roomType, slots);
+  const sourceImage = design?.source_images?.[0] ?? photos[0]?.dataUrl ?? null;
+  const conceptHistory = design?.concept_history ?? conceptImage?.concept_history ?? [];
+  const selectedRevision = conceptHistory.find((revision) => revision.revision_id === selectedRevisionId) ?? conceptHistory.at(-1);
+  const selectedRevisionIndex = selectedRevision
+    ? conceptHistory.findIndex((revision) => revision.revision_id === selectedRevision.revision_id)
+    : -1;
+  const displayedConcept = selectedRevision ?? conceptImage;
+  const comparisonImage = selectedRevisionIndex > 0
+    ? conceptHistory[selectedRevisionIndex - 1]?.image_data_url ?? sourceImage
+    : sourceImage;
+  const displayedProducts: RevisionProduct[] = selectedRevision?.selected_products ?? slots.map((slot) => ({
+    ...(slot.selected_item as CatalogueItem),
+    category: slot.slot.category,
+  }));
   const widthCm = Math.round(cmValue(width, unit));
   const depthCm = Math.round(cmValue(depth, unit));
   const zoneItems: ZoneGridItem[] = slots.map((slot) => ({
@@ -237,6 +570,19 @@ export function WorkspaceClient() {
   const ruleResults = useMemo(() => {
     return design?.critic_verdict.vastu_result?.item_results.flatMap((item) => item.rule_results) ?? [];
   }, [design]);
+  const projectCards = useMemo(() => {
+    const latestByProject = new Map<string, DesignSummary>();
+    for (const savedDesign of savedDesigns) {
+      const existing = latestByProject.get(savedDesign.project_id);
+      if (!existing || new Date(savedDesign.generated_at) > new Date(existing.generated_at)) {
+        latestByProject.set(savedDesign.project_id, savedDesign);
+      }
+    }
+    return Array.from(latestByProject.values()).sort(
+      (left, right) => new Date(right.generated_at).getTime() - new Date(left.generated_at).getTime(),
+    );
+  }, [savedDesigns]);
+  const activeProjectMessages = projectChats[currentProjectId] ?? [];
 
   const roomBrief = {
     room_type: roomType,
@@ -252,30 +598,63 @@ export function WorkspaceClient() {
   };
 
   useEffect(() => {
-    function readUser() {
-      const stored = window.localStorage.getItem(USER_STORAGE_KEY);
-      if (!stored) {
-        setHomeowner(null);
-        setSavedDesigns([]);
-        return;
-      }
-      try {
-        const parsed = JSON.parse(stored) as StoredHomeowner;
-        setHomeowner(parsed);
-        refreshSavedDesigns(parsed).catch(() => setSavedDesigns([]));
-      } catch {
-        window.localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    }
-
-    readUser();
-    window.addEventListener("storage", readUser);
-    window.addEventListener("formaos-user-change", readUser);
-    return () => {
-      window.removeEventListener("storage", readUser);
-      window.removeEventListener("formaos-user-change", readUser);
-    };
+    let active = true;
+    apiFetch("/api/auth/me")
+      .then(async (response) => {
+        if (!response.ok) {
+          router.replace("/login?next=/workspace");
+          return;
+        }
+        const payload = await response.json();
+        if (!active) return;
+        setHomeowner(payload.user);
+        await refreshSavedDesigns(payload.user);
+      })
+      .catch(() => {
+        if (active) setError("We could not connect to your account. Check that the backend is running.");
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+    return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    setBudgetInput(String(budget));
+  }, [budget]);
+
+  function updateBudgetFromSlider(value: number) {
+    setBudget(value);
+    setBudgetInput(String(value));
+  }
+
+  function updateBudgetInput(value: string) {
+    setBudgetInput(value);
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed >= MIN_BUDGET && parsed <= MAX_BUDGET) {
+      setBudget(Math.round(parsed));
+    }
+  }
+
+  function commitBudgetInput() {
+    const parsed = Number(budgetInput);
+    const normalized = Number.isFinite(parsed)
+      ? Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, Math.round(parsed)))
+      : budget;
+    setBudget(normalized);
+    setBudgetInput(String(normalized));
+  }
+
+  function updateProjectChat(projectId: string, updater: (messages: ProjectChatMessage[]) => ProjectChatMessage[]) {
+    setProjectChats((current) => {
+      const next = { ...current, [projectId]: updater(current[projectId] ?? []) };
+      return next;
+    });
+  }
+
+  function appendProjectMessage(projectId: string, role: ProjectChatMessage["role"], text: string) {
+    updateProjectChat(projectId, (messages) => [...messages, newChatMessage(role, text)]);
+  }
 
   async function parseResponse(response: Response) {
     const payload = await response.json().catch(() => ({}));
@@ -288,7 +667,7 @@ export function WorkspaceClient() {
       setSavedDesigns([]);
       return;
     }
-    const response = await fetch(apiUrl(`/api/designs?user_id=${encodeURIComponent(user.id)}`));
+    const response = await apiFetch(`/api/designs?user_id=${encodeURIComponent(user.id)}`);
     const payload = await parseResponse(response);
     setSavedDesigns(payload.designs ?? []);
   }
@@ -302,13 +681,23 @@ export function WorkspaceClient() {
     setter([...selected, value]);
   }
 
-  function handlePhotos(files: FileList | null) {
+  async function fileToDataUrl(file: File) {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePhotos(files: FileList | null) {
     if (!files) return;
-    const selected = Array.from(files).slice(0, 4).map((file) => ({
+    const selected = await Promise.all(Array.from(files).slice(0, 4).map(async (file) => ({
       name: file.name,
       url: URL.createObjectURL(file),
-      note: "Room reference for dimensions, light, and furniture placement.",
-    }));
+      dataUrl: await fileToDataUrl(file),
+      note: "Uploaded room photo to preserve architecture, light, and existing layout.",
+    })));
     setPhotos((current) => [...current, ...selected].slice(0, 4));
   }
 
@@ -316,12 +705,29 @@ export function WorkspaceClient() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(apiUrl(`/api/design/${designId}`));
+      const response = await apiFetch(`/api/design/${designId}`);
       const payload = await parseResponse(response);
       setDesign(payload.design);
       setSessionId(payload.design.session_id);
+      setCurrentProjectId(payload.design.project_id);
+      setConceptImage(payload.design.concept_image ?? null);
+      setSelectedRevisionId(payload.design.concept_history?.at(-1)?.revision_id ?? payload.design.concept_image?.revision_id ?? "");
+      setRoomType(payload.design.room_brief.room_type);
+      setWidth(payload.design.room_brief.width);
+      setDepth(payload.design.room_brief.depth);
+      setUnit(payload.design.room_brief.units);
+      setBudget(payload.design.room_brief.budget_inr);
+      setSelectedStyles(payload.design.room_brief.style_words.length ? payload.design.room_brief.style_words : ["Modern"]);
+      setSelectedPreferences(payload.design.room_brief.constraints.length ? payload.design.room_brief.constraints : ["More storage"]);
+      setVastuEnabled(payload.design.room_brief.vastu_enabled);
+      setMainDoor((payload.design.room_brief.main_door_direction ?? "N") as Direction);
+      setCompass((payload.design.room_brief.compass_direction ?? "N") as Direction);
+      updateProjectChat(payload.design.project_id, () => storedMessages(payload.design).length ? storedMessages(payload.design) : [
+        newChatMessage("assistant", `Loaded ${payload.design.project_name}. Ask for a revision to continue this project chat.`),
+      ]);
       setProgress(payload.design.status === "failed" ? "failed" : "passed");
-      setStep(4);
+      setActiveTab(payload.design.room_brief.vastu_enabled ? "vastu" : "shopping");
+      setStep(5);
     } catch (caught) {
       setProgress("error");
       setError(caught instanceof Error ? caught.message : "general error");
@@ -330,30 +736,95 @@ export function WorkspaceClient() {
     }
   }
 
-  async function generateConcept(sourceDesign = design) {
+  async function generateConcept(
+    sourceDesign = design,
+    revisionText = "",
+    baseRevisionId = selectedRevisionId,
+    revisionMode: "targeted" | "variation" = "targeted",
+  ) {
     if (!sourceDesign) return;
-    const response = await fetch(apiUrl("/api/concept-image"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        project_type: "new_space",
-        room_type: roomType,
-        dimensions: dimensionsLabel,
-        style_words: styleWords(style),
-        constraints: constraintsFrom(style),
-        questionnaire: {
-          mood: selectedStyles.join(", "),
-          priority: selectedPreferences.join(", "),
-          avoid: "clutter, wrong scale, unrealistic furniture",
-          lifestyle: "homeowner-led design",
-        },
-        photo_notes: photoNotes,
-        vastu_enabled: vastuEnabled,
-        grounded_design: sourceDesign,
-      }),
-    });
-    const payload = await parseResponse(response);
-    setConceptImage(payload);
+    setConceptLoading(true);
+    try {
+      const response = await apiFetch("/api/concept-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          design_id: sourceDesign.design_id,
+          base_revision_id: revisionText && baseRevisionId ? baseRevisionId : undefined,
+          revision_mode: revisionMode,
+          project_type: photos.length || sourceDesign.source_images?.length ? "renovation" : "new_space",
+          room_type: roomType,
+          dimensions: dimensionsLabel,
+          style_words: styleWords(style),
+          constraints: constraintsFrom(style),
+          questionnaire: {
+            mood: selectedStyles.join(", "),
+            style_cues: styleCueText,
+            colour_palette: palettePrompt,
+            colour_distribution: "Use a 55% dominant base, 20% natural material tone, 15% secondary hue, and two 5% accents. Show at least four palette colours in the room.",
+            priority: selectedPreferences.join(", "),
+            avoid: "clutter, wrong scale, unrealistic furniture",
+            lifestyle: "homeowner-led design",
+          },
+          photo_notes: photoNotes,
+          photo_data_urls: photos.map((photo) => photo.dataUrl),
+          revision_text: revisionText,
+          vastu_enabled: vastuEnabled,
+          grounded_design: sourceDesign,
+        }),
+      });
+      const payload = await parseResponse(response);
+      const nextConcept = payload.image_data_url ? payload : sourceDesign.concept_image ?? payload;
+      const nextHistory = payload.concept_history ?? sourceDesign.concept_history ?? [];
+      setConceptImage(nextConcept);
+      setSelectedRevisionId(payload.revision_id ?? nextHistory.at(-1)?.revision_id ?? "");
+      setDesign({
+        ...sourceDesign,
+        source_images: photos.length ? photos.slice(0, 2).map((photo) => photo.dataUrl) : sourceDesign.source_images,
+        concept_image: nextConcept,
+        concept_history: nextHistory,
+        last_revision_request: payload.image_data_url ? "" : sourceDesign.last_revision_request,
+      });
+      return payload as ConceptImage;
+    } finally {
+      setConceptLoading(false);
+    }
+  }
+
+  function startNewProject() {
+    setCurrentProjectId(newProjectId());
+    setSessionId("");
+    setDesign(null);
+    setConceptImage(null);
+    setSelectedRevisionId("");
+    setConceptLoading(false);
+    setPhotos([]);
+    setActiveTab("shopping");
+    setProgress("planning");
+    setError("");
+    setChatInput("Make this calmer and keep the same budget.");
+    setStep(0);
+  }
+
+  async function deleteProject(projectId: string, projectName: string) {
+    if (!window.confirm(`Delete ${projectName} and its complete chat and design history? This cannot be undone.`)) return;
+    setDeletingProjectId(projectId);
+    setError("");
+    try {
+      const response = await apiFetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
+      await parseResponse(response);
+      setSavedDesigns((current) => current.filter((savedDesign) => savedDesign.project_id !== projectId));
+      setProjectChats((current) => {
+        const next = { ...current };
+        delete next[projectId];
+        return next;
+      });
+      if (projectId === currentProjectId) startNewProject();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not delete this project.");
+    } finally {
+      setDeletingProjectId("");
+    }
   }
 
   async function startDesign() {
@@ -361,34 +832,49 @@ export function WorkspaceClient() {
       setError("sign_in_required: sign in so YourSpace can save this design to your account");
       return;
     }
+    if (design) {
+      await reviseDesign(
+        "Create a clearly different coordinated design alternative for this selected version. Keep the exact room architecture, camera, openings, built-ins, and functional layout, but visibly restyle the palette, wall treatment, textiles, rug, curtains, lighting, artwork, plants, and decor while retaining the approved product categories.",
+        false,
+        "variation",
+      );
+      return;
+    }
     setLoading(true);
     setError("");
     setDesign(null);
     setConceptImage(null);
+    setSelectedRevisionId("");
     setProgress("planning");
+    const projectId = currentProjectId;
+    const firstMessage = [
+      designGoal,
+      `Dimensions: ${dimensionsLabel}.`,
+      `Style: ${selectedStyles.join(", ")}.`,
+      `Preferences: ${selectedPreferences.join(", ")}.`,
+      `Photo notes: ${photoNotes.join("; ") || "no photos uploaded"}.`,
+      message,
+    ].join(" ");
+    updateProjectChat(projectId, () => [
+      newChatMessage("user", firstMessage),
+      newChatMessage("assistant", "I am checking dimensions, budget, style, catalogue items, and room constraints for this project."),
+    ]);
     try {
-      const sessionResponse = await fetch(apiUrl("/api/session"), {
+      const sessionResponse = await apiFetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief: roomBrief, user_id: homeowner.id }),
+        body: JSON.stringify({ brief: roomBrief, user_id: homeowner.id, project_id: projectId, project_name: projectName }),
       });
       const sessionPayload = await parseResponse(sessionResponse);
       setSessionId(sessionPayload.session_id);
 
       setProgress("designing");
-      const chatResponse = await fetch(apiUrl("/api/chat"), {
+      const chatResponse = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionPayload.session_id,
-          message: [
-            designGoal,
-            `Dimensions: ${dimensionsLabel}.`,
-            `Style: ${selectedStyles.join(", ")}.`,
-            `Preferences: ${selectedPreferences.join(", ")}.`,
-            `Photo notes: ${photoNotes.join("; ") || "no photos uploaded"}.`,
-            message,
-          ].join(" "),
+          message: firstMessage,
           max_retries: 2,
         }),
       });
@@ -398,7 +884,11 @@ export function WorkspaceClient() {
       setDesign(chatPayload.design);
       await refreshSavedDesigns();
       setProgress(chatPayload.design?.status === "failed" ? "failed" : "passed");
-      await generateConcept(chatPayload.design);
+      appendProjectMessage(projectId, "assistant", "The sourceable plan is ready. I am generating the final room image now.");
+      const imagePayload = await generateConcept(chatPayload.design);
+      appendProjectMessage(projectId, "assistant", imagePayload?.mode === "generated" ? "The generated room image is ready." : "The image prompt is ready, but the backend image key is not configured.");
+      setActiveTab(vastuEnabled ? "vastu" : "shopping");
+      await refreshSavedDesigns();
     } catch (caught) {
       if (caught instanceof ApiRequestError && caught.design) {
         setDesign(caught.design);
@@ -411,37 +901,138 @@ export function WorkspaceClient() {
     }
   }
 
-  async function reviseDesign() {
+  async function reviseDesign(
+    messageOverride = "",
+    refreshProducts = false,
+    revisionMode: "targeted" | "variation" = "targeted",
+  ) {
     if (!design) return;
+    const trimmedMessage = (messageOverride || chatInput).trim();
+    if (!trimmedMessage) return;
     setLoading(true);
     setError("");
     setProgress("revising");
+    const baseRevisionId = selectedRevisionId;
+    const projectId = design.project_id || currentProjectId;
+    appendProjectMessage(projectId, "user", trimmedMessage);
     try {
-      const response = await fetch(apiUrl(`/api/design/${design.design_id}/revise`), {
+      const response = await apiFetch(`/api/design/${design.design_id}/revise`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, message: revisionMessage, max_retries: 2 }),
+        body: JSON.stringify({ session_id: sessionId, message: trimmedMessage, max_retries: 2, refresh_products: refreshProducts }),
       });
       const payload = await parseResponse(response);
       setDesign(payload.design);
       await refreshSavedDesigns();
+      appendProjectMessage(
+        projectId,
+        "assistant",
+        revisionMode === "variation"
+          ? "I am creating a visibly different design alternative while keeping this room's architecture and viewpoint fixed."
+          : "I am applying only that revision to the current room image. The room shell and approved shopping list will stay fixed.",
+      );
+      const imagePayload = await generateConcept(payload.design, trimmedMessage, baseRevisionId, revisionMode);
       setProgress(payload.design?.status === "failed" ? "failed" : "passed");
-      await generateConcept(payload.design);
+      appendProjectMessage(
+        projectId,
+        "assistant",
+        imagePayload?.mode === "generated"
+          ? "The revised generated image is ready and saved as a new version."
+          : imagePayload?.notes?.[0] ?? "The revision is saved, but the image service is not currently available. You can retry without losing the request.",
+      );
+      if (!messageOverride) setChatInput("");
+      await refreshSavedDesigns();
     } catch (caught) {
       setProgress("error");
-      setError(caught instanceof Error ? caught.message : "general error");
+      const message = caught instanceof Error ? caught.message : "Image generation failed.";
+      appendProjectMessage(projectId, "assistant", `The revised image was not generated: ${message} Your previous version is still saved and unchanged.`);
+      setError(message);
     } finally {
       setLoading(false);
     }
   }
 
+  async function retryPendingRevision() {
+    const pendingRevision = design?.last_revision_request?.trim();
+    if (!design || !pendingRevision) return;
+    setLoading(true);
+    setError("");
+    setProgress("revising");
+    try {
+      const imagePayload = await generateConcept(design, pendingRevision);
+      setProgress(imagePayload?.mode === "generated" ? "passed" : "error");
+      appendProjectMessage(
+        design.project_id,
+        "assistant",
+        imagePayload?.mode === "generated"
+          ? "The pending revision is now generated and saved as a new version."
+          : imagePayload?.notes?.[0] ?? "The image service is still unavailable.",
+      );
+      await refreshSavedDesigns();
+    } catch (caught) {
+      setProgress("error");
+      setError(caught instanceof Error ? caught.message : "Could not retry this image revision.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function selectAlternative(slot: GroundedSlot, item: CatalogueItem) {
+    if (!design || selectingItemId) return;
+    setSelectingItemId(item.item_id);
+    setError("");
+    try {
+      const response = await apiFetch(`/api/design/${design.design_id}/select-item`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slot_id: slot.slot.slot_id, item_id: item.item_id }),
+      });
+      const payload = await parseResponse(response);
+      setDesign(payload.design);
+      updateProjectChat(payload.design.project_id, () => storedMessages(payload.design));
+      appendProjectMessage(design.project_id, "assistant", "Furniture updated, fit and budget rechecked. I am refreshing the room image to match the selected item.");
+      const imagePayload = await generateConcept(payload.design, `Replace only the ${slot.slot.category} with the newly selected exact catalogue item ${item.title}. Preserve the room, camera, architecture, and every other selected item.`);
+      appendProjectMessage(design.project_id, "assistant", imagePayload?.mode === "generated" ? "The room image now matches the updated furniture plan." : "The furniture plan is saved; image generation is waiting for the configured image key.");
+      await refreshSavedDesigns();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not update this furniture item.");
+    } finally {
+      setSelectingItemId("");
+    }
+  }
+
+  async function signOut() {
+    await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    router.replace("/");
+  }
+
   function nextStep(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
+    if (step === 4) commitBudgetInput();
     if (step < wizardSteps.length - 1) setStep(step + 1);
   }
 
   function previousStep() {
     if (step > 0) setStep(step - 1);
+  }
+
+  function showVastuResults() {
+    setActiveTab("vastu");
+    window.requestAnimationFrame(() => document.getElementById("vastu-results")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  if (authLoading) {
+    return <section className="ys-app-shell ys-auth-loading" aria-live="polite">Opening your private design studio...</section>;
+  }
+
+  if (!homeowner) {
+    return (
+      <section className="ys-app-shell workspace-login-required">
+        <h1>Sign in to open your projects</h1>
+        <p>Your saved rooms and recommendations are available only inside your account.</p>
+        <Link className="ys-solid-button" href="/login?next=/workspace">Go to sign in</Link>
+      </section>
+    );
   }
 
   return (
@@ -452,13 +1043,42 @@ export function WorkspaceClient() {
           <strong>YourSpace</strong>
         </Link>
         <div className="ys-user-mini">
-          {homeowner ? <span>{homeowner.name}</span> : <Link href="/login?next=/workspace">Log in</Link>}
+          <span className="ys-user-avatar" aria-hidden="true">{homeowner.name.slice(0, 1).toUpperCase()}</span>
+          <span><strong>{homeowner.name}</strong><small>{homeowner.email}</small></span>
+          <button type="button" onClick={signOut}>Sign out</button>
         </div>
       </div>
 
-      <div className="ys-stepper" aria-label="Agent progress states">
+      <div className="ys-product-layout">
+        <aside className="ys-project-rail" aria-label="Your projects">
+          <button className="ys-new-project" type="button" onClick={startNewProject}>+ New project</button>
+          <div className="ys-project-rail-heading"><strong>Projects</strong><span>{projectCards.length}</span></div>
+          <div className="ys-project-rail-list">
+            {projectCards.length ? projectCards.map((savedProject) => (
+              <div key={savedProject.project_id} className={`ys-project-row ${savedProject.project_id === currentProjectId ? "active" : ""}`}>
+                <button className="ys-project-open" type="button" onClick={() => loadDesign(savedProject.design_id)}>
+                  <img src={safePreviewPath(savedProject)} alt="" onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
+                  <span><strong>{savedProject.project_name}</strong><small>{savedProject.item_count} items · {new Date(savedProject.generated_at).toLocaleDateString()}</small></span>
+                </button>
+                <button
+                  className="ys-project-delete"
+                  type="button"
+                  onClick={() => deleteProject(savedProject.project_id, savedProject.project_name)}
+                  disabled={deletingProjectId === savedProject.project_id}
+                  aria-label={`Delete ${savedProject.project_name} chat and project`}
+                  title="Delete chat"
+                >
+                  {deletingProjectId === savedProject.project_id ? "..." : "Delete"}
+                </button>
+              </div>
+            )) : <p>No saved projects yet. Start with your first room.</p>}
+          </div>
+        </aside>
+
+        <div className="ys-product-main">
+      <div className="ys-stepper" aria-label="Design intake progress">
         {wizardSteps.map((label, index) => (
-          <button key={label} type="button" className={index === step ? "active" : index < step ? "done" : ""} onClick={() => setStep(index)}>
+          <button key={label} type="button" disabled={index > step} className={index === step ? "active" : index < step ? "done" : ""} onClick={() => { if (index <= step) setStep(index); }}>
             <span>{index + 1}</span>
             {label}
           </button>
@@ -469,14 +1089,13 @@ export function WorkspaceClient() {
         {progressStates.map((state) => (
           <span key={state}>{state}</span>
         ))}
-        <span>Grounded item cards</span>
-        <span>Product photo collage</span>
+        <span>Versioned concept history</span>
         <span>Design workspace tabs</span>
         <span>Shopping list</span>
         <span>Empty design state</span>
       </div>
 
-      {step < 4 ? (
+      {step < 5 ? (
         <form className="ys-wizard-card" onSubmit={nextStep}>
           {step === 0 ? (
             <section className="ys-step-layout">
@@ -489,10 +1108,12 @@ export function WorkspaceClient() {
                   <small>Drag and drop or click to browse</small>
                 </label>
                 <div className="ys-photo-strip">
-                  {[...photos.map((photo) => photo.url), ...sampleRooms].slice(0, 4).map((url, index) => (
-                    <img key={`${url}-${index}`} src={url} alt={`Room reference ${index + 1}`} />
-                  ))}
-                  <button type="button">+ Add more</button>
+                  {photos.length ? photos.map((photo, index) => (
+                    <img key={`${photo.name}-${index}`} src={photo.url} alt={`Uploaded room photo ${index + 1}`} />
+                  )) : (
+                    <div className="ys-photo-empty">Upload photos of your actual room before generating.</div>
+                  )}
+                  <button type="button" onClick={() => document.querySelector<HTMLInputElement>(".ys-upload input")?.click()}>+ Add more</button>
                 </div>
               </div>
               <div className="ys-form-grid">
@@ -537,12 +1158,24 @@ export function WorkspaceClient() {
               <h1>What's your style?</h1>
               <p>Choose up to 3 styles you love.</p>
               <div className="ys-style-grid">
-                {styleOptions.map((option, index) => (
-                  <button key={option} type="button" className={selectedStyles.includes(option) ? "selected" : ""} onClick={() => toggleOption(option, selectedStyles, setSelectedStyles, 3)}>
-                    <img src={sampleRooms[index % sampleRooms.length]} alt={`${option} room`} />
-                    <span>{option}</span>
+                {styleCards.map((styleCard) => (
+                  <button key={styleCard.label} type="button" className={selectedStyles.includes(styleCard.label) ? "selected" : ""} onClick={() => toggleOption(styleCard.label, selectedStyles, setSelectedStyles, 3)}>
+                    <img src={styleCard.imageSrc} alt={`${styleCard.label} interior style`} />
+                    <span>{styleCard.label}</span>
+                    <small>{styleCard.cues}</small>
+                    <span className="ys-style-swatches" aria-label={`${styleCard.label} colour palette`}>
+                      {styleCard.palette.map((colour) => <i key={colour.hex} style={{ backgroundColor: colour.hex }} title={`${colour.name} ${colour.hex}`} />)}
+                    </span>
                   </button>
                 ))}
+              </div>
+              <div className="ys-selected-palette" aria-label="Selected design colour direction">
+                <strong>{leadStylePalette?.label ?? "Selected"} lead palette</strong>
+                <div>
+                  {(leadStylePalette?.palette ?? []).map((colour, index) => (
+                    <span key={`${colour.hex}-${index}`}><i style={{ backgroundColor: colour.hex }} /><small>{colour.name}</small></span>
+                  ))}
+                </div>
               </div>
             </section>
           ) : null}
@@ -559,30 +1192,71 @@ export function WorkspaceClient() {
                   </button>
                 ))}
               </div>
-              <div className="ys-vastu-row">
-                <label>
-                  <input type="checkbox" checked={vastuEnabled} onChange={(event) => setVastuEnabled(event.target.checked)} />
-                  Vastu aware
-                </label>
-                <select value={mainDoor} onChange={(event) => setMainDoor(event.target.value as Direction)}>
-                  {directions.map((direction) => <option key={direction} value={direction}>Door {direction}</option>)}
-                </select>
-                <select value={compass} onChange={(event) => setCompass(event.target.value as Direction)}>
-                  {directions.map((direction) => <option key={direction} value={direction}>Compass {direction}</option>)}
-                </select>
-              </div>
             </section>
           ) : null}
 
           {step === 3 ? (
+            <section className="ys-vastu-step">
+              <div className="ys-vastu-step-heading">
+                <div><span className="eyebrow">Placement intelligence</span><h1>Design with Vastu guidance?</h1><p>Set the room orientation used for furniture placement and the final Vastu score.</p></div>
+                <label className="ys-vastu-toggle">
+                  <input type="checkbox" checked={vastuEnabled} onChange={(event) => setVastuEnabled(event.target.checked)} />
+                  <span aria-hidden="true" />
+                  <strong>{vastuEnabled ? "Vastu on" : "Vastu off"}</strong>
+                </label>
+              </div>
+              <div className={vastuEnabled ? "ys-vastu-config" : "ys-vastu-config disabled"}>
+                <div>
+                  <strong>Main door direction</strong>
+                  <p>Select where the room entrance sits.</p>
+                  <div className="ys-direction-grid" aria-label="Main door direction">
+                    {["NW", "N", "NE", "W", "C", "E", "SW", "S", "SE"].map((direction) => (
+                      <button key={direction} type="button" disabled={!vastuEnabled || direction === "C"} className={mainDoor === direction ? "selected" : ""} onClick={() => setMainDoor(direction as Direction)}>{direction === "C" ? "Center" : direction}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="ys-vastu-principles">
+                  <strong>Placement priorities</strong>
+                  <div><span>NE</span><p><b>Light & calm</b>Natural light, plants, and open visual space.</p></div>
+                  <div><span>SW</span><p><b>Stability</b>Heavy storage and anchored furniture.</p></div>
+                  <div><span>C</span><p><b>Clear center</b>Unblocked circulation through the room.</p></div>
+                  <label>North reference<select disabled={!vastuEnabled} value={compass} onChange={(event) => setCompass(event.target.value as Direction)}>{directions.filter((direction) => direction !== "C").map((direction) => <option key={direction} value={direction}>{direction}</option>)}</select></label>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {step === 4 ? (
             <section className="ys-budget-step">
               <h1>What's your budget?</h1>
               <p>Set your comfortable budget range.</p>
-              <div className="ys-budget-value">{formatCurrency(budget)}</div>
-              <input type="range" min="50000" max="500000" step="5000" value={budget} onChange={(event) => setBudget(Number(event.target.value))} />
+              <label className="ys-budget-input-wrap">
+                <span>INR</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={MIN_BUDGET}
+                  max={MAX_BUDGET}
+                  step={1000}
+                  value={budgetInput}
+                  onChange={(event) => updateBudgetInput(event.target.value)}
+                  onBlur={commitBudgetInput}
+                  aria-label="Interior design budget in Indian rupees"
+                />
+              </label>
+              <div className="ys-budget-value" aria-live="polite">{formatCurrency(budget)}</div>
+              <input
+                type="range"
+                min={MIN_BUDGET}
+                max={MAX_BUDGET}
+                step={BUDGET_STEP}
+                value={budget}
+                onChange={(event) => updateBudgetFromSlider(Number(event.target.value))}
+                aria-label="Budget slider"
+              />
               <div className="ys-range-labels">
-                <span>{formatCurrency(50000)}</span>
-                <span>{formatCurrency(500000)}</span>
+                <span>{formatCurrency(MIN_BUDGET)}</span>
+                <span>{formatCurrency(MAX_BUDGET)}</span>
               </div>
               <p className="ys-hint">We'll recommend furniture items that fit your budget.</p>
             </section>
@@ -602,39 +1276,41 @@ export function WorkspaceClient() {
               <div><dt>Room type</dt><dd>{roomType.replace("_", " ")}</dd></div>
               <div><dt>Dimensions</dt><dd>{dimensionsLabel}</dd></div>
               <div><dt>Style</dt><dd>{selectedStyles.join(", ")}</dd></div>
+              <div className="ys-review-palette"><dt>Palette</dt><dd>{stylePalettes[0]?.palette.map((colour) => <i key={colour.hex} style={{ backgroundColor: colour.hex }} title={`${colour.name} ${colour.hex}`} />)}</dd></div>
               <div><dt>Preferences</dt><dd>{selectedPreferences.join(", ")}</dd></div>
+              <div><dt>Vastu</dt><dd>{vastuEnabled ? `Enabled · door ${mainDoor} · compass ${compass}` : "Not requested"}</dd></div>
               <div><dt>Budget</dt><dd>{formatCurrency(budget)}</dd></div>
             </dl>
             <div className="ys-wizard-actions">
               <button className="secondary-button" type="button" onClick={previousStep}>Back</button>
               <button className="primary-button" type="button" onClick={startDesign} disabled={loading}>
-                {loading ? "Generating..." : "Generate designs"}
+                {loading ? "Generating..." : design ? "Regenerate selected version" : "Generate designs"}
               </button>
             </div>
             {error ? <p className="workspace-error" role="alert">{error}</p> : null}
           </div>
 
-          <div className="ys-projects-card" aria-label="Saved designs">
+          <div className="ys-chat-card" aria-label="Project chat">
             <div className="ys-projects-heading">
-              <h2>My Projects</h2>
-              <button type="button" onClick={() => setStep(0)}>+ New Project</button>
+              <h2>Project Chat</h2>
+              <span>{projectName}</span>
             </div>
-            <div className="ys-project-grid">
-              {savedDesigns.length ? savedDesigns.map((savedDesign, index) => (
-                <button key={savedDesign.design_id} type="button" onClick={() => loadDesign(savedDesign.design_id)}>
-                  <img className="ys-room-thumb" src={projectImages[index % projectImages.length]} alt={`${savedDesign.room_type.replace("_", " ")} project`} />
-                  <strong>{savedDesign.room_type.replace("_", " ")}</strong>
-                  <span>Updated recently</span>
-                </button>
+            <div className="ys-chat-thread">
+              {activeProjectMessages.length ? activeProjectMessages.map((chatMessage) => (
+                <article key={chatMessage.id} className={chatMessage.role === "user" ? "ys-chat-message user" : "ys-chat-message assistant"}>
+                  <span>{chatMessage.role === "user" ? "You" : "YourSpace"}</span>
+                  <p>{chatMessage.text}</p>
+                </article>
               )) : (
-                ["Living room", "Master bedroom", "Dining area", "Home office"].map((name, index) => (
-                  <button key={name} type="button">
-                    <img className="ys-room-thumb" src={projectImages[index % projectImages.length]} alt={`${name} project preview`} />
-                    <strong>{name}</strong>
-                    <span>Generate to save here</span>
-                  </button>
-                ))
+                <div className="ys-chat-empty">This project has its own chat. Generate a design or load a saved project to start.</div>
               )}
+              {conceptLoading ? (
+                <article className="ys-chat-message assistant ys-chat-generating" aria-label="Image generation in progress">
+                  <span>YourSpace</span>
+                  <div className="ys-chat-generation-preview" aria-hidden="true"><i /><i /><i /></div>
+                  <p>{progress === "revising" ? "Applying your revision while preserving this room and its approved items." : "Generating the room design from your photo and approved shopping list."}</p>
+                </article>
+              ) : null}
             </div>
           </div>
 
@@ -651,87 +1327,148 @@ export function WorkspaceClient() {
               </div>
             </div>
 
-            {design ? (
-              <div className="product-collage" aria-label="Product photo collage">
-                {slots.map((slot) => (
-                  <img key={`collage-${slot.selected_item?.item_id}`} src={safeImagePath(slot.selected_item as CatalogueItem)} alt={slot.selected_item?.title ?? slot.slot.category} onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
-                ))}
-              </div>
-            ) : (
+            {!design ? (
               <div className="workspace-empty-state" aria-label="Empty design state">Your generated concept, selected items, checks, and saved version appear here.</div>
-            )}
+            ) : null}
 
             <section className="concept-panel" aria-label="Generated interior concept">
               <div className="concept-heading">
                 <div>
                   <span className="eyebrow">Final visual concept</span>
-                  <h2>{conceptImage?.mode === "generated" ? "Generated image" : "Image generation brief"}</h2>
+                  <h2>{conceptLoading ? "Generating image" : displayedConcept?.mode === "generated" ? selectedRevision?.label ?? "Generated image" : "Image generation brief"}</h2>
                 </div>
-                <span className={conceptImage?.mode === "generated" ? "status hard" : "status soft"}>{conceptImage?.mode === "generated" ? "Image ready" : "Prompt ready"}</span>
+                <span className={displayedConcept?.mode === "generated" && !conceptLoading ? "status hard" : "status soft"}>{conceptLoading ? "Working" : displayedConcept?.mode === "generated" ? "Image ready" : "Prompt ready"}</span>
               </div>
-              {conceptImage?.image_data_url ? <img className="concept-image" src={conceptImage.image_data_url} alt="Generated interior design concept" /> : null}
-              {conceptImage && !conceptImage.image_data_url ? <pre>{conceptImage.image_prompt}</pre> : null}
-              {design ? (
-                <div className="studio-action-row">
-                  <Link className="secondary-button" href={`/design/${design.design_id}/brief`}>Open export brief</Link>
-                  <button className="secondary-button" type="button" onClick={reviseDesign} disabled={loading}>Revise</button>
-                  <input value={revisionMessage} onChange={(event) => setRevisionMessage(event.target.value)} aria-label="Revision message" />
+              {conceptHistory.length ? (
+                <div className="concept-version-toolbar" aria-label="Design version navigation">
+                  <button type="button" disabled={selectedRevisionIndex <= 0} onClick={() => setSelectedRevisionId(conceptHistory[selectedRevisionIndex - 1]?.revision_id ?? "")}>Previous</button>
+                  <span><strong>{selectedRevision?.label}</strong><small>Version {selectedRevisionIndex + 1} of {conceptHistory.length}</small></span>
+                  <button type="button" disabled={selectedRevisionIndex < 0 || selectedRevisionIndex >= conceptHistory.length - 1} onClick={() => setSelectedRevisionId(conceptHistory[selectedRevisionIndex + 1]?.revision_id ?? "")}>Next</button>
                 </div>
+              ) : null}
+              {conceptLoading ? (
+                <div className="concept-loading-card" aria-label="Image generation in progress">
+                  <div className="concept-loading-frame">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <p>Generating your room image</p>
+                </div>
+              ) : null}
+              {!conceptLoading && displayedConcept?.image_data_url && comparisonImage ? (
+                <div className="concept-comparison" aria-label="Compare the selected design with its previous version">
+                  <BeforeAfterSlider
+                    beforeSrc={comparisonImage}
+                    afterSrc={displayedConcept.image_data_url}
+                    beforeAlt={selectedRevisionIndex > 0 ? "Previous generated design version" : "Uploaded room before redesign"}
+                    afterAlt="Selected generated design version"
+                    className="concept-before-after"
+                  />
+                </div>
+              ) : null}
+              {!conceptLoading && displayedConcept?.image_data_url && !comparisonImage ? <img className="concept-image" src={displayedConcept.image_data_url} alt="Generated interior design concept" /> : null}
+              {!conceptLoading && displayedConcept && !displayedConcept.image_data_url ? <pre>{displayedConcept.image_prompt}</pre> : null}
+              {design ? (
+                <div className="design-intelligence-strip" aria-label="Design summary">
+                  <div className="design-palette-summary">
+                    <span>Colour direction</span>
+                    <strong>{selectedStyles.slice(0, 2).join(" + ")}</strong>
+                    <div>{stylePalettes[0]?.palette.map((colour) => <i key={colour.hex} style={{ backgroundColor: colour.hex }} title={`${colour.name} ${colour.hex}`} />)}</div>
+                  </div>
+                  <button type="button" className={vastuEnabled ? "vastu-summary active" : "vastu-summary"} onClick={showVastuResults} disabled={!vastuEnabled}>
+                    <span>Vastu score</span><strong>{vastuEnabled ? `${vastuScore}/100` : "Off"}</strong><small>{vastuEnabled ? "View placement plan" : "Not requested"}</small>
+                  </button>
+                  <div><span>Sourceable plan</span><strong>{slots.length} items</strong><small>{formatCurrency(backendTotal)}</small></div>
+                </div>
+              ) : null}
+              {conceptHistory.length ? (
+                <section className="concept-revisions" aria-label="All generated design revisions">
+                  <div className="concept-revisions-heading">
+                    <div><span className="eyebrow">Saved versions</span><h3>Design revisions</h3></div>
+                    <span>{conceptHistory.length} {conceptHistory.length === 1 ? "version" : "versions"}</span>
+                  </div>
+                  <div className="concept-revision-list">
+                    {conceptHistory.map((revision) => (
+                      <button
+                        key={revision.revision_id}
+                        type="button"
+                        className={revision.revision_id === selectedRevision?.revision_id ? "active" : ""}
+                        onClick={() => setSelectedRevisionId(revision.revision_id)}
+                      >
+                        <img src={revision.image_data_url ?? "/product-placeholder.svg"} alt="" />
+                        <span><strong>{revision.label}</strong><small>{revision.revision_text}</small></span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="revision-product-set">
+                    <div><strong>Furniture saved with this version</strong><span>{displayedProducts.length} catalogue items</span></div>
+                    <div className="revision-product-list">
+                      {displayedProducts.map((item) => (
+                        <article key={`${selectedRevision?.revision_id ?? "current"}-${item.item_id}`}>
+                          <img src={safeImagePath(item as CatalogueItem)} alt={item.title} onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
+                          <span><small>{item.category}</small><strong>{item.title}</strong><code>{item.item_id}</code></span>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+              {design ? (
+                <form className="studio-action-row" onSubmit={(event) => { event.preventDefault(); reviseDesign(); }}>
+                  <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} aria-label="Revision message" placeholder="Describe one change to this design" />
+                  <button className="primary-button" type="submit" disabled={loading || conceptLoading || !chatInput.trim()}>{progress === "revising" || conceptLoading ? "Revising..." : "Send revision"}</button>
+                  {design.last_revision_request ? <button className="secondary-button" type="button" disabled={loading || conceptLoading} onClick={retryPendingRevision}>Retry pending image</button> : null}
+                  <Link
+                    className="secondary-button"
+                    href={`/design/${design.design_id}/brief${selectedRevision?.revision_id ? `?revision=${encodeURIComponent(selectedRevision.revision_id)}` : ""}`}
+                  >
+                    Export selected version
+                  </Link>
+                  <button className="secondary-button" type="button" disabled={loading || conceptLoading} onClick={() => reviseDesign("Refresh every furniture match for this room, then synchronize the image with the corrected catalogue list. Keep the room architecture and camera angle fixed, but make each visible furniture item match its supplied product reference.", true)}>Refresh furniture & image</button>
+                </form>
               ) : null}
             </section>
 
             <div className="workspace-tabs" role="tablist" aria-label="Design workspace tabs">
               {tabs.map((tab) => (
-                <button key={tab} className={activeTab === tab ? "workspace-tab active" : "workspace-tab"} type="button" onClick={() => setActiveTab(tab)}>
-                  {tab === "shopping" ? "Shopping list" : tab}
+                <button key={tab} disabled={!design} className={activeTab === tab ? "workspace-tab active" : "workspace-tab"} type="button" onClick={() => { if (design) setActiveTab(tab); }}>
+                  {tab === "vastu" ? `Vastu & checks${vastuEnabled ? ` · ${vastuScore}` : ""}` : "Shopping & materials"}
                 </button>
               ))}
             </div>
 
-            {activeTab === "items" ? (
-              <div className="workspace-item-grid" aria-label="Grounded item cards">
-                {slots.map((slot) => {
-                  const item = slot.selected_item as CatalogueItem;
-                  const vastuBadge = design?.critic_verdict.vastu_result?.item_results.find((result) => result.item_id === item.item_id)?.badge;
-                  return (
-                    <article className="workspace-item-card" key={item.item_id}>
-                      <img src={safeImagePath(item)} alt={item.title} onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
-                      <div>
-                        <span className="product-category">{item.product_type}</span>
-                        <h2>{item.title}</h2>
-                        <p>ID {item.item_id}: {item.width_cm} x {item.depth_cm} x {item.height_cm ?? "n/a"} cm - {item.material ?? "material n/a"} - {item.color ?? "colour n/a"}</p>
-                        <p>{design?.critic_verdict.fit.notes.join(" ") || "Fit checked by backend."}</p>
-                        <div className="item-meta-row">
-                          <strong>{formatCurrency(item.price_inr)}</strong>
-                          <span className="status hard">Zone {slot.placement_zone}</span>
-                          {vastuEnabled ? <span className="status soft">Vastu {vastuBadge ?? design?.critic_verdict.vastu.status}</span> : null}
-                        </div>
-                        <p className="alternatives">Alternatives: {slot.alternatives.slice(0, 3).map((alternative) => `${alternative.item_id} ${alternative.title}`).join(", ")}</p>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : null}
-
             {activeTab === "vastu" ? (
-              <div className="workspace-vastu-panel">
-                <ZoneGrid items={zoneItems} />
-                <aside className="vastu-notes">
-                  <div className="score-card">
-                    <strong>{design?.critic_verdict.vastu_result?.score ?? 0}</strong>
-                    <p>{design?.critic_verdict.vastu.status ?? "waiting"} Vastu score.</p>
-                  </div>
-                  {ruleResults.slice(0, 4).map((rule) => (
-                    <article className="workspace-rule-card" key={`${rule.rule_id}-${rule.item_id}`}>
-                      <strong>{rule.rule_id}: {rule.status}</strong>
-                      <p>{rule.note}</p>
-                      <p>{rule.rationale}</p>
+              <div className="design-checks-panel" id="vastu-results" aria-label="Vastu and project design checks">
+                <div className="design-checks-heading">
+                  <div><span className="eyebrow">Practical review</span><h2>What YourSpace checked</h2></div>
+                  <span className={design?.critic_verdict.passed ? "status hard" : "status soft"}>{design?.critic_verdict.passed ? "Ready to use" : "Needs attention"}</span>
+                </div>
+                <div className="design-check-grid">
+                  {[
+                    { label: "Room fit", status: design?.critic_verdict.fit.status, note: design?.critic_verdict.fit.notes.join(" ") || `${slots.length} selected items stay within their approved room footprints.` },
+                    { label: "Budget", status: design?.critic_verdict.budget.status, note: design?.critic_verdict.budget.notes.join(" ") || `${formatCurrency(backendTotal)} total stays within your ${formatCurrency(budget)} budget.` },
+                    { label: "Real products", status: design?.critic_verdict.sourceability.status, note: design?.critic_verdict.sourceability.notes.join(" ") || "Every selected furniture item has a catalogue ID, dimensions, price, and product image." },
+                    { label: "Vastu guidance", status: design?.critic_verdict.vastu.status, note: design?.critic_verdict.vastu.notes.join(" ") || (vastuEnabled ? "The selected placement plan has no blocking Vastu concerns." : "Vastu was not requested for this project.") },
+                  ].map((check) => (
+                    <article key={check.label}>
+                      <span className={check.status === "pass" ? "check-dot pass" : check.status === "fail" ? "check-dot fail" : "check-dot warn"} aria-hidden="true" />
+                      <div><strong>{check.label}</strong><p>{check.note}</p></div>
+                      <b>{check.status ?? "waiting"}</b>
                     </article>
                   ))}
-                  <article className="workspace-rule-card"><strong>Palette suggestions</strong><p>{slots.map((slot) => slot.selected_item?.color).filter(Boolean).join(", ") || "Palette appears after backend selection."}</p></article>
-                  <article className="workspace-rule-card"><strong>Actionable notes</strong><p>{design?.critic_verdict.vastu_result?.notes.join(" ") || design?.critic_verdict.vastu.notes.join(" ") || "No Vastu action required."}</p></article>
-                </aside>
+                </div>
+                {vastuEnabled ? (
+                  <div className="workspace-vastu-panel">
+                    <ZoneGrid items={zoneItems} />
+                    <aside className="vastu-notes">
+                      <div className="score-card"><strong>{vastuScore}</strong><p>Vastu placement score</p></div>
+                      {ruleResults.slice(0, 4).map((rule) => (
+                        <article className="workspace-rule-card" key={`${rule.rule_id}-${rule.item_id}`}><strong>{rule.status === "pass" ? "Placed well" : "Review placement"}</strong><p>{rule.note}</p><p>{rule.rationale}</p></article>
+                      ))}
+                    </aside>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -746,14 +1483,71 @@ export function WorkspaceClient() {
                 <div className="shopping-list">
                   {slots.map((slot) => {
                     const item = slot.selected_item as CatalogueItem;
-                    return <article className="product-row" key={`shopping-${item.item_id}`}><div><span className="product-category">{slot.slot.category}</span><h3>{item.title}</h3><p>{item.item_id}</p></div><strong>{formatCurrency(item.price_inr)}</strong></article>;
+                    const vastuBadge = design?.critic_verdict.vastu_result?.item_results.find((result) => result.item_id === item.item_id)?.badge;
+                    return (
+                      <article className="product-row shopping-product" key={`shopping-${item.item_id}`}>
+                        <img className="shopping-product-image" src={safeImagePath(item)} alt={item.title} onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
+                        <div className="shopping-product-copy">
+                          <div className="shopping-product-heading">
+                            <div><span className="product-category">{slot.slot.category}</span><h3>{item.title}</h3></div>
+                            <strong>{formatCurrency(item.price_inr)}</strong>
+                          </div>
+                          <p className="shopping-item-id">Catalogue ID {item.item_id} · selected and fit checked</p>
+                          <dl className="shopping-product-specs">
+                            <div><dt>Dimensions</dt><dd>{item.width_cm} × {item.depth_cm} × {item.height_cm ?? "n/a"} cm</dd></div>
+                            <div><dt>Material</dt><dd>{item.material ?? "Not specified"}</dd></div>
+                            <div><dt>Colour</dt><dd>{item.color ?? "Not specified"}</dd></div>
+                            <div><dt>Placement</dt><dd>Zone {slot.placement_zone}{vastuEnabled ? ` · ${vastuBadge ?? design?.critic_verdict.vastu.status}` : ""}</dd></div>
+                          </dl>
+                          <p className="shopping-product-reason">{slot.slot.style_text || `${selectedStyles.join(" and ")} styling`} · approved for a maximum {slot.constraints?.max_width_cm ?? item.width_cm} × {slot.constraints?.max_depth_cm ?? item.depth_cm} cm footprint.</p>
+                          <div className="shopping-product-actions">
+                            <a href={productSearchUrl(item)} target="_blank" rel="noreferrer">Find similar product</a>
+                            <span>Image and specifications above are the exact catalogue selection used by the design prompt.</span>
+                          </div>
+                          {slot.alternatives.length ? (
+                            <div className="shopping-alternatives">
+                              <span>Approved alternatives</span>
+                              <div>
+                                {slot.alternatives.slice(0, 3).map((alternative) => (
+                                  <button key={alternative.item_id} type="button" disabled={Boolean(selectingItemId)} onClick={() => selectAlternative(slot, alternative)}>
+                                    <img src={safeImagePath(alternative)} alt="" onError={(event) => { event.currentTarget.src = "/product-placeholder.svg"; }} />
+                                    <span>{alternative.title}</span>
+                                    <strong>{selectingItemId === alternative.item_id ? "Updating..." : "Use this"}</strong>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
                   })}
                 </div>
+                <section className="finish-schedule" aria-label="Complete materials and decor schedule">
+                  <div>
+                    <span className="eyebrow">Complete material list</span>
+                    <h2>Finishes, styling, and decor</h2>
+                  </div>
+                  <div className="finish-schedule-grid">
+                    {finishSchedule.map((item) => (
+                      <article key={item.category}>
+                        <div className="finish-heading"><span>{item.category}</span><i style={{ backgroundColor: item.hex }} aria-label={`${item.colourName} ${item.hex}`} /></div>
+                        <h3>{item.recommendation}</h3>
+                        <p className="finish-colour"><b>{item.colourName}</b><code>{item.hex}</code></p>
+                        <strong>{item.quantity}</strong>
+                        <p>{item.note}</p>
+                        <a href={item.link} target="_blank" rel="noreferrer">{item.linkLabel}</a>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               </div>
             ) : null}
           </div>
         </section>
       )}
+        </div>
+      </div>
     </section>
   );
 }

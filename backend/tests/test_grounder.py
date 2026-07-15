@@ -121,6 +121,34 @@ def test_normal_living_room_selects_real_catalogue_items_with_alternatives(
     assert_grounded_items_pass_filters(grounded, catalogue_ids)
 
 
+def test_bedroom_storage_prefers_actual_storage_furniture(chroma_path: Path) -> None:
+    brief = create_room_brief(
+        room_type="bedroom",
+        width=14,
+        depth=16,
+        units="ft",
+        budget_inr=240000,
+        style_words=["japandi"],
+    )
+    slot = DesignSlot(
+        slot_id="slot_bedroom_storage",
+        category="storage",
+        target_width_cm=160,
+        target_depth_cm=65,
+        style_text="japandi wardrobe or drawer storage",
+        budget_share=0.3,
+        placement_hint="W",
+    )
+
+    grounded = ground_design(brief, [slot], chroma_path=chroma_path, catalogue_path=CATALOGUE_PATH)
+    selected = grounded.grounded_slots[0].selected_item
+
+    assert selected is not None
+    title = selected.title.lower()
+    assert any(term in title for term in ["drawer", "organizer", "shelf", "cabinet", "wardrobe", "dresser"])
+    assert not any(term in title for term in ["coffee table", "ottoman", "bench", "desk", "container", "recliner"])
+
+
 def test_small_room_returns_structured_failures_for_items_that_do_not_fit(chroma_path: Path) -> None:
     brief = create_room_brief(
         room_type="living room",

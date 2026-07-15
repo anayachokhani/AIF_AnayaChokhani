@@ -116,20 +116,16 @@ def rule_status_for_item(rule: VastuRule, item: CatalogueItem) -> RuleStatus:
         raise VastuCheckerError(f"item {item.item_id} has invalid placement zone: {zone}")
 
     terms = item_terms(item)
-    if zone in rule.avoided_zones:
-        if rule.severity != "critical":
+    if rule.perspective in {"placement", "clearance"}:
+        if zone in rule.avoided_zones:
+            return "fail" if rule.severity == "critical" else "warn"
+        if rule.preferred_zones and zone not in rule.preferred_zones:
+            return "fail" if rule.severity == "critical" else "warn"
+    if rule.perspective == "color":
+        if any(color in terms for color in rule.avoided_colors):
+            return "fail" if rule.severity == "critical" else "warn"
+        if rule.preferred_colors and not any(color in terms for color in rule.preferred_colors):
             return "warn"
-        return "fail"
-    if any(color in terms for color in rule.avoided_colors):
-        if rule.severity != "critical":
-            return "warn"
-        return "fail"
-    if rule.preferred_zones and zone not in rule.preferred_zones:
-        if rule.severity == "critical":
-            return "fail"
-        return "warn"
-    if rule.preferred_colors and not any(color in terms for color in rule.preferred_colors):
-        return "warn"
     return "pass"
 
 
@@ -137,14 +133,14 @@ def actionable_note(rule: VastuRule, item: CatalogueItem, status: RuleStatus) ->
     label = SEVERITY_LABELS[rule.severity]
     if status == "pass":
         return f"{label}: {item.title} satisfies {rule.rule_id} in zone {item.placement_zone}."
-    if item.placement_zone in rule.avoided_zones:
+    if rule.perspective in {"placement", "clearance"} and item.placement_zone in rule.avoided_zones:
         preferred = ", ".join(rule.preferred_zones) or "a preferred zone"
         return f"{label}: move {item.title} from {item.placement_zone} to {preferred}."
-    if rule.preferred_zones and item.placement_zone not in rule.preferred_zones:
+    if rule.perspective in {"placement", "clearance"} and rule.preferred_zones and item.placement_zone not in rule.preferred_zones:
         return f"{label}: consider placing {item.title} in {', '.join(rule.preferred_zones)}."
-    if rule.avoided_colors:
+    if rule.perspective == "color" and rule.avoided_colors:
         return f"{label}: avoid {', '.join(rule.avoided_colors)} for {item.title}."
-    if rule.preferred_colors:
+    if rule.perspective == "color" and rule.preferred_colors:
         return f"{label}: prefer {', '.join(rule.preferred_colors)} tones/material cues for {item.title}."
     return f"{label}: review {item.title} against {rule.rule_id}."
 
@@ -193,7 +189,12 @@ def check_vastu(
     for item in valid_items:
         if item.placement_zone is None or not is_valid_zone(item.placement_zone):
             raise VastuCheckerError(f"item {item.item_id} has invalid placement zone: {item.placement_zone}")
-        matched_rules = [rule for rule in rule_set.rules if rule_matches_item(rule, valid_brief, item)]
+        # Facing direction is enforced in the image prompt; placement_zone cannot verify it.
+        matched_rules = [
+            rule
+            for rule in rule_set.rules
+            if rule_matches_item(rule, valid_brief, item) and rule.perspective != "orientation"
+        ]
         rule_results: list[VastuRuleResult] = []
         for rule in matched_rules:
             status = rule_status_for_item(rule, item)

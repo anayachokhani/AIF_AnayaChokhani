@@ -34,6 +34,12 @@ test("server-renders the FormaOS overview", async () => {
   assert.match(html, /grounded/);
   assert.match(html, /Start designing/);
   assert.match(html, /Design your space in/);
+  for (const id of ["how", "styles", "features", "pricing", "about"]) {
+    assert.match(html, new RegExp(`href="#${id}"`));
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(html, /Distinct looks, not generic rooms/);
+  assert.match(html, /Interior design that respects the actual home/);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
 });
 
@@ -55,9 +61,10 @@ test("server-renders the homeowner login shell", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Homeowner account/);
-  assert.match(html, /Continue as homeowner/);
-  assert.match(html, /Saved designs/);
+  assert.match(html, /Your private design studio/);
+  assert.match(html, /Every room, revision, and recommendation/);
+  assert.match(html, /Sign in/);
+  assert.match(html, /Create account/);
 });
 
 test("server-renders the T18 workspace shell", async () => {
@@ -65,20 +72,26 @@ test("server-renders the T18 workspace shell", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /FormaOS design workspace/);
-  assert.match(html, /get to know your space/);
-  assert.match(html, /planning/);
-  assert.match(html, /designing/);
-  assert.match(html, /grounding/);
-  assert.match(html, /checking/);
-  assert.match(html, /revising/);
-  assert.match(html, /passed/);
-  assert.match(html, /failed/);
-  assert.match(html, /error/);
-  assert.match(html, /Empty design state/);
-  assert.match(html, /Grounded item cards/);
-  assert.match(html, /Design workspace tabs/);
-  assert.match(html, /Shopping list/);
+  assert.match(html, /Opening your private design studio/);
+  const workspace = await readFile(new URL("../app/components/WorkspaceClient.tsx", import.meta.url), "utf8");
+  assert.match(workspace, /FormaOS design workspace/);
+  assert.match(workspace, /get to know your space/);
+  assert.match(workspace, /Shopping & materials/);
+  assert.match(workspace, /Design workspace tabs/);
+  assert.match(workspace, /Shopping list/);
+  assert.match(workspace, /Vastu & checks/);
+});
+
+test("workspace does not use remote placeholder room thumbnails", async () => {
+  const workspace = await readFile(new URL("../app/components/WorkspaceClient.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(workspace, /images\.unsplash\.com|googleusercontent|google\.com/i);
+  assert.match(workspace, /preview_image_data_url/);
+  assert.match(workspace, /project_id/);
+  assert.match(workspace, /photo_data_urls/);
+  assert.match(workspace, /readAsDataURL/);
+  assert.match(workspace, /style-images\/industrial\.png/);
+  assert.match(workspace, /finishScheduleFor/);
+  assert.doesNotMatch(workspace, /sampleRooms/);
 });
 
 test("server-renders the T19 local export brief route shell", async () => {

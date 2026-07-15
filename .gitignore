@@ -39,6 +39,7 @@ yarn-error.log*
 !.env.example
 
 # local data and generated artifacts
+/.formaos-data/
 /data/raw/
 /data/external/
 /data/vectorstores/

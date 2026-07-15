@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from formaos.agents.critic import CriticCheckResult, CriticVerdict
-from formaos.agents.designer import PLACEMENT_HINTS
 from formaos.agents.graph_loop import AgentLoopResult, run_agent_loop
 from formaos.agents.planner import PlannerNeed, PlannerOutput, RoomFacts
 from formaos.agents.reviser import ReviserValidationError, revise_slots
@@ -98,7 +97,7 @@ def test_reviser_validation_errors_are_typed() -> None:
     assert exc_info.value.code == "reviser_validation_failed"
 
 
-def test_langgraph_loop_corrects_deliberately_failing_vastu_design(tmp_path: Path) -> None:
+def test_langgraph_loop_applies_vastu_before_grounding(tmp_path: Path) -> None:
     brief = create_room_brief(
         room_type="bedroom",
         width=12,
@@ -119,28 +118,19 @@ def test_langgraph_loop_corrects_deliberately_failing_vastu_design(tmp_path: Pat
     )
     chroma_path = tmp_path / "chroma"
     build_index(CATALOGUE_PATH, chroma_path)
-    original_bed_hint = PLACEMENT_HINTS["bed"]
-    original_table_hint = PLACEMENT_HINTS["table"]
-    try:
-        PLACEMENT_HINTS["bed"] = "NE"
-        PLACEMENT_HINTS["table"] = "C"
-        result = run_agent_loop(
-            brief,
-            planner_client=FakePlannerClient(planner.model_dump()),
-            catalogue_path=CATALOGUE_PATH,
-            chroma_path=chroma_path,
-            max_retries=2,
-        )
-    finally:
-        PLACEMENT_HINTS["bed"] = original_bed_hint
-        PLACEMENT_HINTS["table"] = original_table_hint
+    result = run_agent_loop(
+        brief,
+        planner_client=FakePlannerClient(planner.model_dump()),
+        catalogue_path=CATALOGUE_PATH,
+        chroma_path=chroma_path,
+        max_retries=2,
+    )
 
     assert isinstance(result, AgentLoopResult)
     assert result.status == "passed"
     assert result.critic_verdict.passed is True
-    assert result.retries_used >= 1
-    assert any(entry.state == "revising" for entry in result.attempt_log)
-    assert any("slot_1_bed" in entry.changed_slots for entry in result.attempt_log)
+    assert result.retries_used == 0
+    assert not any(entry.state == "revising" for entry in result.attempt_log)
     bed_slot = next(slot for slot in result.grounder_output.grounded_slots if slot.slot.category == "bed")
     assert bed_slot.placement_zone == "SW"
 

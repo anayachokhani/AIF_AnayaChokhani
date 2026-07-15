@@ -2,21 +2,35 @@
 
 import { type CSSProperties, useState } from "react";
 
-export function BeforeAfterSlider() {
+type BeforeAfterSliderProps = {
+  beforeSrc?: string;
+  afterSrc?: string;
+  beforeAlt?: string;
+  afterAlt?: string;
+  className?: string;
+};
+
+export function BeforeAfterSlider({
+  beforeSrc = "/before-interior.png",
+  afterSrc = "/landing-interior.png",
+  beforeAlt = "Room before redesign",
+  afterAlt = "Room after redesign",
+  className = "",
+}: BeforeAfterSliderProps = {}) {
   const [split, setSplit] = useState(52);
   const sliderStyle = { "--split": `${split}%` } as CSSProperties;
 
   return (
-    <div className="ys-before-after" style={sliderStyle}>
+    <div className={`ys-before-after ${className}`.trim()} style={sliderStyle}>
       <img
         className="ys-ba-image ys-ba-after"
-        src="/landing-interior.png"
-        alt="After interior design with warm green cabinetry, layered seating, and styled decor"
+        src={afterSrc}
+        alt={afterAlt}
       />
       <img
         className="ys-ba-image ys-ba-before"
-        src="/before-interior.png"
-        alt="Before interior with a plain wall, existing seating, and basic furniture"
+        src={beforeSrc}
+        alt={beforeAlt}
       />
       <span className="ys-ba-label ys-ba-label-before">Before</span>
       <span className="ys-ba-label ys-ba-label-after">After</span>

@@ -14,6 +14,20 @@ const benefits = [
   ["Wallet", "Budget smart"],
 ];
 
+const styleRows = [
+  ["Modern", "Clean lines, warm neutrals, walnut, black metal."],
+  ["Japandi", "Low furniture, linen, clay, oak, calm negative space."],
+  ["Boho", "Layered textiles, cane, terracotta, plants, collected objects."],
+  ["Industrial", "Cognac leather, black steel, brick, concrete, reclaimed wood."],
+];
+
+const features = [
+  ["Existing-room redesign", "Upload a room photo and the design image keeps your real windows, walls, layout, and camera angle."],
+  ["Sourceable products", "Furniture and decor are grounded against catalogue items with photos, dimensions, prices, and fit checks."],
+  ["Complete material list", "The final plan includes paint, curtains, plants, wall art, showpieces, lighting, and soft furnishings."],
+  ["Saved projects", "Every generated design is attached to the homeowner account and can be opened again later."],
+];
+
 export default function OverviewPage() {
   return (
     <main className="ys-landing">
@@ -76,6 +90,64 @@ export default function OverviewPage() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="ys-landing-section ys-styles-section" id="styles">
+          <div className="ys-section-kicker">Styles</div>
+          <div className="ys-section-heading">
+            <h2>Distinct looks, not generic rooms.</h2>
+            <p>
+              YourSpace treats each style as a design system: furniture shapes,
+              palette, materials, lighting, art, and styling all change together.
+            </p>
+          </div>
+          <div className="ys-style-preview-grid">
+            {styleRows.map(([name, text]) => (
+              <article key={name}>
+                <img src={`/style-images/${name.toLowerCase()}.png`} alt={`${name} interior style`} />
+                <div>
+                  <strong>{name}</strong>
+                  <p>{text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="ys-landing-section" id="features">
+          <div className="ys-section-kicker">Features</div>
+          <div className="ys-feature-list">
+            {features.map(([title, text]) => (
+              <article key={title}>
+                <span />
+                <h2>{title}</h2>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="ys-landing-section ys-pricing-section" id="pricing">
+          <div>
+            <div className="ys-section-kicker">Pricing</div>
+            <h2>Start with a guided design brief.</h2>
+            <p>
+              The prototype keeps pricing simple: sign in, create a project, upload
+              your room, generate a design, and review the itemized plan.
+            </p>
+          </div>
+          <Link className="ys-solid-button large" href="/login?next=/workspace">Start designing</Link>
+        </section>
+
+        <section className="ys-landing-section ys-about-section" id="about">
+          <div className="ys-section-kicker">About us</div>
+          <h2>Interior design that respects the actual home.</h2>
+          <p>
+            YourSpace is built for homeowners who need practical design decisions,
+            not moodboards alone. It combines uploaded room context, a short
+            questionnaire, AI image editing, Vastu-aware placement, and a sourceable
+            product and material list.
+          </p>
         </section>
       </section>
     </main>

@@ -16,22 +16,36 @@ export default function CataloguePage() {
       <section className="catalogue-grid">
         {products.map((product) => (
           <article className="catalogue-card" key={product.id}>
-            <div className="product-swatch">
-              <span>{product.category.slice(0, 2).toUpperCase()}</span>
+            <div className="catalogue-image-frame">
+              <img src={product.imageSrc} alt={product.name} />
+              <span>{product.category}</span>
             </div>
-            <div>
-              <span className="product-id">{product.id}</span>
+            <div className="catalogue-card-body">
+              <div className="catalogue-card-heading">
+                <span className="product-id">{product.id}</span>
+                <strong>{formatCurrency(product.price)}</strong>
+              </div>
               <h2>{product.name}</h2>
-              <p>
-                {product.width} x {product.depth} x {product.height} cm - {product.material}
-              </p>
+              <dl className="catalogue-meta">
+                <div>
+                  <dt>Size</dt>
+                  <dd>{product.width} x {product.depth} x {product.height} cm</dd>
+                </div>
+                <div>
+                  <dt>Material</dt>
+                  <dd>{product.material}</dd>
+                </div>
+                <div>
+                  <dt>Finish</dt>
+                  <dd>{product.finish}</dd>
+                </div>
+              </dl>
               <div className="tag-row">
                 {product.style.map((tag) => (
                   <span key={tag}>{tag}</span>
                 ))}
               </div>
             </div>
-            <strong>{formatCurrency(product.price)}</strong>
           </article>
         ))}
       </section>

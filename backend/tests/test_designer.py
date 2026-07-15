@@ -47,21 +47,23 @@ def write_catalogue(path: Path, categories: list[str]) -> None:
             writer.writerow({"item_id": f"item-{index}", "normalized_category": category})
 
 
-def test_living_room_planner_output_becomes_four_to_seven_slots() -> None:
+def test_living_room_planner_output_becomes_rich_sourceable_slots() -> None:
     brief = create_room_brief(
         room_type="living room",
         width=9,
         depth=11,
         units="ft",
-        budget_inr=60000,
+        budget_inr=180000,
         style_words=["warm", "wood"],
         constraints=["kid-friendly"],
     )
     planner = planner_output_for(brief, [need("sofa", 0.42), need("table", 0.18, 2), need("rug", 0.12, 3)])
     output = design_slots(brief, planner)
-    assert 4 <= len(output.slots) <= 7
-    assert [slot.category for slot in output.slots][:3] == ["sofa", "table", "rug"]
-    assert "storage" in [slot.category for slot in output.slots]
+    assert 8 <= len(output.slots) <= 10
+    assert [slot.category for slot in output.slots][:2] == ["sofa", "table"]
+    categories = [slot.category for slot in output.slots]
+    for category in ["storage", "chair", "cabinet", "lamp", "mirror", "planter"]:
+        assert category in categories
     assert output.concept_image_prompt is None
     for slot in output.slots:
         assert slot.slot_id.startswith("slot_")
@@ -85,11 +87,31 @@ def test_tiny_bedroom_gets_compact_valid_slots() -> None:
     )
     planner = planner_output_for(brief, [need("bed", 0.55), need("storage", 0.25, 2)])
     output = design_slots(brief, planner)
-    assert 4 <= len(output.slots) <= 7
+    assert len(output.slots) == 4
     bed = next(slot for slot in output.slots if slot.category == "bed")
     assert bed.target_width_cm <= 212.5
     assert bed.target_depth_cm <= 220
-    assert "lamp" in [slot.category for slot in output.slots]
+    assert "cabinet" in [slot.category for slot in output.slots]
+
+
+def test_vastu_enabled_design_uses_rule_preferred_placement_before_grounding() -> None:
+    brief = create_room_brief(
+        room_type="bedroom",
+        width=12,
+        depth=14,
+        units="ft",
+        budget_inr=180000,
+        style_words=["modern"],
+        vastu_enabled=True,
+    )
+    planner = planner_output_for(brief, [need("bed", 0.6), need("storage", 0.4, 2)])
+
+    output = design_slots(brief, planner)
+    placements = {slot.category: slot.placement_hint for slot in output.slots}
+
+    assert placements["bed"] == "SW"
+    assert placements["storage"] in {"S", "W", "SW"}
+    assert placements["mirror"] in {"N", "E"}
 
 
 def test_optional_concept_prompt_is_generated_without_image_spend() -> None:
@@ -99,7 +121,7 @@ def test_optional_concept_prompt_is_generated_without_image_spend() -> None:
     assert output.concept_image_prompt is not None
     assert "study" in output.concept_image_prompt
     assert "desk" in output.concept_image_prompt
-    assert 4 <= len(output.slots) <= 7
+    assert len(output.slots) == 4
 
 
 def test_study_room_generates_desk_chair_storage_lamp_slots() -> None:
@@ -107,7 +129,9 @@ def test_study_room_generates_desk_chair_storage_lamp_slots() -> None:
     planner = planner_output_for(brief, [need("desk", 0.45), need("chair", 0.25, 2)])
     output = design_slots(brief, planner)
     categories = [slot.category for slot in output.slots]
-    assert categories == ["desk", "chair", "storage", "lamp"]
+    assert categories[:2] == ["desk", "chair"]
+    for category in ["storage", "cabinet"]:
+        assert category in categories
     assert isinstance(output, DesignerOutput)
 
 
@@ -124,13 +148,13 @@ def test_designer_rejects_slot_category_not_in_curated_catalogue(tmp_path: Path)
         assert exc.code == "designer_validation_failed"
 
 
-def test_designer_limits_to_seven_slots_and_normalizes_budget() -> None:
+def test_designer_limits_to_ten_slots_and_normalizes_budget() -> None:
     brief = create_room_brief(room_type="living room", width=12, depth=14, units="ft", budget_inr=120000)
-    categories = ["sofa", "table", "rug", "storage", "lamp", "chair", "mirror", "planter"]
+    categories = ["sofa", "table", "rug", "storage", "lamp", "chair", "mirror", "planter", "cabinet", "loveseat"]
     planner = planner_output_for(brief, [need(category, 0.2, min(index + 1, 5)) for index, category in enumerate(categories)])
     output = design_slots(brief, planner)
-    assert len(output.slots) == 7
-    assert "planter" not in [slot.category for slot in output.slots]
+    assert len(output.slots) == 10
+    assert "loveseat" in [slot.category for slot in output.slots]
     assert sum(slot.budget_share for slot in output.slots) == pytest.approx(1.0, abs=0.01)
 
 
@@ -141,7 +165,7 @@ def test_large_room_generates_realistic_footprints_and_valid_budget_sum() -> Non
         [need("sofa", 0.35), need("table", 0.15, 2), need("rug", 0.15, 3), need("storage", 0.2, 4), need("lamp", 0.05, 5)],
     )
     output = design_slots(brief, planner)
-    assert len(output.slots) == 5
+    assert len(output.slots) >= 8
     sofa = next(slot for slot in output.slots if slot.category == "sofa")
     rug = next(slot for slot in output.slots if slot.category == "rug")
     assert sofa.target_width_cm <= 230
@@ -249,6 +273,6 @@ def test_planner_designer_pipeline_uses_designer_and_preserves_brief() -> None:
     assert isinstance(result, PlannerDesignerResult)
     assert result.planner_output.room_facts.room_type == brief.room_type
     assert result.planner_output.room_facts.budget_inr == brief.budget_inr
-    assert 4 <= len(result.designer_output.slots) <= 7
+    assert len(result.designer_output.slots) == 4
     assert result.designer_output.concept_image_prompt is not None
     assert all(slot.must_have_constraints for slot in result.designer_output.slots)

@@ -141,7 +141,9 @@ def build_planner_prompt(brief: RoomBrief, validation_error: str | None = None) 
     system = (
         "You are the FormaOS Planner node. Return only strict JSON. "
         "Preserve the room facts, budget, style words, and constraints exactly. "
-        "Create a practical furniture needs list for later retrieval. "
+        "Create a practical 6 to 10 item furniture and decor needs list for later retrieval. "
+        "Include the main furniture plus supporting pieces such as accent seating, storage, rug, lighting, mirror, and planter when appropriate. "
+        "Use style_tags and purpose text to distinguish design styles through material, silhouette, palette, and decor cues. "
         f"Allowed categories: {', '.join(sorted(ALLOWED_NEED_CATEGORIES))}."
     )
     user = (

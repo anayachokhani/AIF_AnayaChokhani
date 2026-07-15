@@ -49,20 +49,49 @@ test("workspace owns the core T18 journey and calls only backend API routes", ()
     assert.match(workspace, new RegExp(`\\b${field}\\b\\s*[:,]`), field);
   }
 
-  assert.match(workspace, /apiUrl\("\/api\/session"\)/);
-  assert.match(workspace, /apiUrl\("\/api\/chat"\)/);
-  assert.match(workspace, /apiUrl\(`\/api\/design\/\$\{design\.design_id\}\/revise`\)/);
+  assert.match(workspace, /apiFetch\("\/api\/session"/);
+  assert.match(workspace, /apiFetch\("\/api\/chat"/);
+  assert.match(workspace, /apiFetch\(`\/api\/design\/\$\{design\.design_id\}\/revise`/);
   assert.doesNotMatch(workspace, /OPENROUTER_API_KEY|openrouter\.ai|Authorization|Bearer |apiKey\s*[:=]/);
   assert.match(workspace, /progressStates = \["planning", "designing", "grounding", "checking", "revising", "passed", "failed", "error"\]/);
-  assert.match(workspace, /tabs = \["items", "vastu", "shopping"\]/);
+  assert.match(workspace, /tabs = \["shopping", "vastu"\]/);
   assert.match(workspace, /<ZoneGrid items=\{zoneItems\} \/>/);
-  assert.match(workspace, /Grounded item cards/);
-  assert.match(workspace, /Product photo collage/);
-  assert.match(data, /href: "\/workspace", label: "Workspace"/);
+  assert.match(workspace, /Shopping & materials/);
+  assert.match(workspace, /Design revisions/);
+  assert.match(workspace, /Furniture saved with this version/);
+  assert.match(workspace, /concept_history/);
+  assert.match(workspace, /selectedRevisionId/);
+  assert.doesNotMatch(workspace, /Product photo collage/);
+  assert.match(workspace, /Project Chat/);
+  assert.match(workspace, /projectChats/);
+  assert.match(workspace, /apiFetch\(`\/api\/projects\/\$\{encodeURIComponent\(projectId\)\}`/);
+  assert.match(workspace, /Delete .*complete chat and design history/);
+  assert.match(workspace, /apiFetch\("\/api\/auth\/me"\)/);
+  assert.match(workspace, /credentials: "include"/);
+  assert.doesNotMatch(workspace, /localStorage|sessionStorage/);
+  assert.match(workspace, /conceptLoading/);
+  assert.match(workspace, /concept-loading-card/);
+  assert.match(workspace, /ys-chat-generating/);
+  assert.match(workspace, /BeforeAfterSlider/);
+  assert.match(workspace, /source_images/);
+  assert.match(workspace, /revision_text/);
+  assert.match(workspace, /base_revision_id/);
+  assert.match(workspace, /selectedRevisionId/);
+  assert.match(workspace, /refresh_products: refreshProducts/);
+  assert.match(workspace, /Refresh furniture & image/);
+  assert.match(workspace, /styleCards/);
+  assert.match(workspace, /\/style-images\/modern\.png/);
+  assert.match(workspace, /colour_palette: palettePrompt/);
+  assert.match(workspace, /Show at least four palette colours/);
+  assert.match(workspace, /ys-style-swatches/);
+  assert.match(workspace, /Complete material list/);
+  assert.match(workspace, /Wall paint/);
+  assert.match(workspace, /Showpieces/);
+  assert.match(data, /href: "\/workspace", label: "My projects"/);
 });
 
 test("workspace renders backend design data rather than app data catalogue fixtures", () => {
-  assert.doesNotMatch(workspace, /planItems|productById|products/);
+  assert.doesNotMatch(workspace, /\bplanItems\b|\bproductById\b|import\s*\{[^}]*\bproducts\b/);
   assert.match(workspace, /selected_item/);
   assert.match(workspace, /item\.item_id/);
   assert.match(workspace, /item\.title/);
@@ -73,25 +102,52 @@ test("workspace renders backend design data rather than app data catalogue fixtu
   assert.match(workspace, /safeImagePath\(item\)/);
   assert.match(workspace, /product-placeholder\.svg/);
   assert.match(workspace, /slot\.alternatives\.slice\(0, 3\)/);
+  assert.match(workspace, /selectAlternative/);
+  assert.match(workspace, /\/select-item/);
+  assert.match(workspace, /Approved alternatives/);
+  assert.match(workspace, /Find similar product/);
+  assert.match(workspace, /Material/);
+  assert.match(workspace, /Colour/);
 });
 
 test("workspace exposes Vastu, shopping, budget, revision, and error states", () => {
   assert.match(workspace, /critic_verdict\.vastu_result\?\.score/);
   assert.match(workspace, /item_results\.flatMap/);
   assert.match(workspace, /rule_results/);
-  assert.match(workspace, /Palette suggestions/);
-  assert.match(workspace, /Actionable notes/);
+  assert.match(workspace, /What YourSpace checked/);
+  assert.match(workspace, /Real products/);
+  assert.match(workspace, /Vastu & checks/);
+  assert.match(workspace, /Design with Vastu guidance/);
+  assert.match(workspace, /Placement priorities/);
+  assert.match(workspace, /design-intelligence-strip/);
   assert.match(workspace, /visibleTotal === backendTotal/);
   assert.match(workspace, /budgetStatus/);
+  assert.match(workspace, /budgetInput/);
+  assert.match(workspace, /type="number"/);
+  assert.match(workspace, /type="range"/);
+  assert.match(workspace, /updateBudgetFromSlider/);
   assert.match(workspace, /reviseDesign/);
+  assert.match(workspace, /Revising\.\.\./);
+  assert.match(workspace, /Retry pending image/);
+  assert.match(workspace, /retryPendingRevision/);
+  assert.match(workspace, /Regenerate selected version/);
+  assert.match(workspace, /Design version navigation/);
+  assert.match(workspace, />Previous</);
+  assert.match(workspace, />Next</);
+  assert.match(workspace, /comparisonImage/);
+  assert.match(workspace, /revision_mode: revisionMode/);
+  assert.match(workspace, /"variation"/);
   assert.match(workspace, /role="alert"/);
-  assert.match(workspace, /invalid_brief|no_catalogue_results|retry_exhausted|graph_failure|general error|missing_api_key/);
+  assert.match(workspace, /invalid_brief|no_catalogue_results|retry_exhausted|graph_failure|general error|missing_api_key|image_service_unavailable/);
 });
 
 test("T19 export brief uses backend export data and local share route", () => {
-  assert.match(workspace, /href=\{`\/design\/\$\{design\.design_id\}\/brief`\}/);
-  assert.match(designBriefRoute, /ExportBriefClient designId=\{id\}/);
-  assert.match(exportBrief, /apiUrl\(`\/api\/export\/\$\{designId\}`\)/);
+  assert.match(workspace, /Export selected version/);
+  assert.match(workspace, /\?revision=\$\{encodeURIComponent\(selectedRevision\.revision_id\)\}/);
+  assert.match(designBriefRoute, /revisionId=\{revisionId\}/);
+  assert.match(designBriefRoute, /searchParams/);
+  assert.match(exportBrief, /apiUrl\(`\/api\/export\/\$\{designId\}\$\{revisionQuery\}`\)/);
+  assert.match(exportBrief, /revision_id=\$\{encodeURIComponent\(revisionId\)\}/);
   assert.doesNotMatch(exportBrief, /planItems|productById|demoBrief|attempts/);
   for (const required of [
     "room_brief",
@@ -105,7 +161,8 @@ test("T19 export brief uses backend export data and local share route", () => {
     "attribution",
     "Amazon Berkeley Objects",
     "curated indicative demo values",
-    "Print PDF",
+    "Print or save PDF",
+    "Download brief",
     "product-placeholder.svg",
   ]) {
     assert.match(exportBrief, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), required);
@@ -115,19 +172,45 @@ test("T19 export brief uses backend export data and local share route", () => {
   assert.match(exportBrief, /User requirements/);
   assert.match(exportBrief, /Budget summary/);
   assert.match(exportBrief, /itemTotal === payload\.total_price_inr/);
+  assert.match(exportBrief, /credentials: "include"/);
+  assert.match(exportBrief, /cache: "no-store"/);
+  assert.match(exportBrief, /window\.print\(\)/);
+  assert.match(exportBrief, /waitForImages/);
+  assert.match(exportBrief, /concept_image_data_url/);
+  assert.match(exportBrief, /source_image_data_url/);
+  assert.match(exportBrief, /imageSourceAsDataUrl/);
+  assert.match(exportBrief, /new Blob\(\[html\]/);
   assert.match(css, /@page/);
   assert.match(css, /page-break-inside: avoid/);
   assert.match(css, /overflow: visible !important/);
 });
 
 test("T19 backend export reads stored design without regenerating", () => {
-  const exportFn = apiMain.match(/def export_design\(design_id: str\) -> ExportResponse:[\s\S]*?return ExportResponse\(/);
+  const exportFn = apiMain.match(/def export_design\([\s\S]*?\) -> ExportResponse:[\s\S]*?return ExportResponse\(/);
   assert.ok(exportFn);
   assert.match(exportFn[0], /design = design_store\.get\(design_id\)/);
   assert.doesNotMatch(exportFn[0], /run_design_for_session|run_agent_loop/);
   assert.match(apiMain, /"generated_at": datetime\.now\(UTC\)\.isoformat\(\)/);
   assert.match(apiMain, /total_price = sum\(int\(item\["price_inr"\]\) for item in selected\)/);
   assert.match(apiMain, /stored design total does not match selected item prices/);
+});
+
+test("account and project access use backend sessions instead of editable browser identity", () => {
+  const login = readFileSync("app/components/LoginClient.tsx", "utf8");
+  assert.match(login, /\/api\/auth\/signup/);
+  assert.match(login, /\/api\/auth\/login/);
+  assert.match(login, /credentials: "include"/);
+  assert.doesNotMatch(login + workspace, /formaos_homeowner|localStorage|sessionStorage/);
+  assert.match(apiMain, /httponly=True/);
+  assert.match(apiMain, /pbkdf2_hmac/);
+  assert.match(apiMain, /authenticated_user/);
+  assert.match(workspace, /disabled=\{index > step\}/);
+  assert.match(workspace, /disabled=\{!design\}/);
+  assert.match(login, /showPassword/);
+  assert.match(login, /type=\{showPassword \? "text" : "password"\}/);
+  assert.match(login, /Hide password/);
+  assert.match(apiMain, /@app\.delete\("\/api\/projects\/\{project_id\}"/);
+  assert.match(apiMain, /delete_project\(project_id, user\["id"\]\)/);
 });
 
 test("planner direction values match backend Direction values", () => {
