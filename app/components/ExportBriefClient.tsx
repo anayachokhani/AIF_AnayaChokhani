@@ -37,6 +37,7 @@ type ExportPayload = {
   project_name: string;
   generated_at: string;
   revision_id?: string | null;
+  revision_request?: string | null;
   concept_image_data_url?: string | null;
   source_image_data_url?: string | null;
   revision_label?: string | null;
@@ -102,11 +103,15 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
   const [exportAction, setExportAction] = useState<"" | "printing" | "downloading">("");
   const [exportError, setExportError] = useState("");
   const revisionQuery = revisionId ? `?revision_id=${encodeURIComponent(revisionId)}` : "";
-  const briefPath = `/design/${designId}/brief${revisionId ? `?revision=${encodeURIComponent(revisionId)}` : ""}`;
+  const briefPath = `/design/${designId}/brief${revisionId ? `?revision_id=${encodeURIComponent(revisionId)}` : ""}`;
+  const revisionImageUrl = payload?.revision_id
+    ? apiUrl(`/api/export/${designId}/image?revision_id=${encodeURIComponent(payload.revision_id)}`)
+    : payload?.concept_image_data_url ?? null;
 
   useEffect(() => {
     let cancelled = false;
     async function loadExport() {
+      setPayload(null);
       setError("");
       setAuthRequired(false);
       try {
@@ -119,6 +124,9 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
           if (body?.detail?.code === "authentication_required") setAuthRequired(true);
           const message = body?.detail?.code ? `${body.detail.code}: ${body.detail.message}` : "Unable to load export brief";
           throw new Error(message);
+        }
+        if (revisionId && body.revision_id !== revisionId) {
+          throw new Error("The export service returned a different design version. Please retry the selected version.");
         }
         if (!cancelled) setPayload(body);
       } catch (caught) {
@@ -251,6 +259,7 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
             {Math.round(payload.room_brief.depth_cm)} cm - {formatCurrency(payload.room_brief.budget_inr)} budget.
           </p>
           <p>Design ID {payload.design_id}{payload.revision_id ? ` · Version ID ${payload.revision_id}` : ""} - Generated {generatedAt}</p>
+          {payload.revision_request ? <p><strong>Version direction:</strong> {payload.revision_request}</p> : null}
         </div>
         <div className="export-actions">
           <Link className="secondary-button" href="/workspace">Back to projects</Link>
@@ -264,10 +273,21 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
         </div>
       </section>
 
-      {payload.concept_image_data_url || payload.source_image_data_url ? (
+      {revisionImageUrl || payload.source_image_data_url ? (
         <section className="export-room-visuals" aria-label="Before and after room design">
           {payload.source_image_data_url ? <figure><img src={payload.source_image_data_url} alt="Original room before redesign" /><figcaption>Before - original room</figcaption></figure> : null}
-          {payload.concept_image_data_url ? <figure><img src={payload.concept_image_data_url} alt="Generated room design" /><figcaption>After - {payload.revision_label || "current approved design"}</figcaption></figure> : null}
+          {revisionImageUrl ? (
+            <figure key={payload.revision_id ?? "current"}>
+              <img
+                key={revisionImageUrl}
+                src={revisionImageUrl}
+                crossOrigin="use-credentials"
+                alt={`Generated room design - ${payload.revision_label || "current approved design"}`}
+                data-revision-id={payload.revision_id ?? undefined}
+              />
+              <figcaption>After - {payload.revision_label || "current approved design"}</figcaption>
+            </figure>
+          ) : null}
         </section>
       ) : null}
 

@@ -1632,12 +1632,12 @@ export function WorkspaceClient() {
                   <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} aria-label="Revision message" placeholder="Describe one change to this design" />
                   <button className="primary-button" type="submit" disabled={loading || conceptLoading || !chatInput.trim()}>{progress === "revising" || conceptLoading ? "Revising..." : "Send revision"}</button>
                   {design.last_revision_request ? <button className="secondary-button" type="button" disabled={loading || conceptLoading} onClick={retryPendingRevision}>Retry pending image</button> : null}
-                  <Link
+                  <a
                     className="secondary-button"
-                    href={`/design/${design.design_id}/brief${selectedRevision?.revision_id ? `?revision=${encodeURIComponent(selectedRevision.revision_id)}` : ""}`}
+                    href={`/design/${design.design_id}/brief${selectedRevision?.revision_id ? `?revision_id=${encodeURIComponent(selectedRevision.revision_id)}` : ""}`}
                   >
                     Export selected version
-                  </Link>
+                  </a>
                   <button className="secondary-button" type="button" disabled={loading || conceptLoading} onClick={() => reviseDesign("Refresh every furniture match for this room, then synchronize the image with the corrected catalogue list. Keep the room architecture and camera angle fixed, but make each visible furniture item match its supplied product reference.", true)}>Refresh furniture & image</button>
                 </form>
               ) : null}

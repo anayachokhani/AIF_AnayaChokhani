@@ -2,12 +2,16 @@ import { ExportBriefClient } from "../../../components/ExportBriefClient";
 
 type DesignBriefPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ revision?: string | string[] }>;
+  searchParams: Promise<{
+    revision_id?: string | string[];
+    revision?: string | string[];
+  }>;
 };
 
 export default async function DesignBriefPage({ params, searchParams }: DesignBriefPageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const revisionId = Array.isArray(query.revision) ? query.revision[0] : query.revision;
-  return <ExportBriefClient designId={id} revisionId={revisionId} />;
+  const requestedRevision = query.revision_id ?? query.revision;
+  const revisionId = Array.isArray(requestedRevision) ? requestedRevision[0] : requestedRevision;
+  return <ExportBriefClient key={`${id}:${revisionId ?? "latest"}`} designId={id} revisionId={revisionId} />;
 }

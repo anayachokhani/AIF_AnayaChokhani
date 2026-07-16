@@ -1273,6 +1273,7 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
     assert original_export.status_code == 200
     assert original_export.json()["revision_id"] == base_revision_id
     assert original_export.json()["revision_label"] == "Original design"
+    assert original_export.json()["revision_request"] == "Initial generated design"
     assert original_export.json()["concept_image_data_url"] == "data:image/jpeg;base64,d29ybGQ="
     assert [item["item_id"] for item in original_export.json()["selected_items"]] == original_item_ids
 
@@ -1284,10 +1285,31 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
     assert revised_export.status_code == 200
     assert revised_export.json()["revision_id"] == revised_revision_id
     assert revised_export.json()["revision_label"] == "Version 2"
+    assert revised_export.json()["revision_request"] == "Make the curtains olive and change nothing else."
     assert revised_export.json()["concept_image_data_url"] == "data:image/jpeg;base64,cmV2aXNlZA=="
     assert revised_export.json()["finish_schedule"][0]["hex"] == "#6F765A"
+    original_image = client.get(
+        f"/api/export/{created['design_id']}/image",
+        params={"revision_id": base_revision_id},
+    )
+    revised_image = client.get(
+        f"/api/export/{created['design_id']}/image",
+        params={"revision_id": revised_revision_id},
+    )
+    assert original_image.status_code == 200
+    assert revised_image.status_code == 200
+    assert original_image.content == b"world"
+    assert revised_image.content == b"revised"
+    assert original_image.content != revised_image.content
+    assert original_image.headers["x-design-revision"] == base_revision_id
+    assert revised_image.headers["x-design-revision"] == revised_revision_id
+    assert revised_image.headers["cache-control"] == "no-store, no-cache, must-revalidate, max-age=0"
     assert client.get(
         f"/api/export/{created['design_id']}",
+        params={"revision_id": "revision-not-in-project"},
+    ).status_code == 422
+    assert client.get(
+        f"/api/export/{created['design_id']}/image",
         params={"revision_id": "revision-not-in-project"},
     ).status_code == 422
 

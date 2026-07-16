@@ -146,15 +146,22 @@ test("workspace exposes Vastu, shopping, budget, revision, and error states", ()
 
 test("T19 export brief uses backend export data and local share route", () => {
   assert.match(workspace, /Export selected version/);
-  assert.match(workspace, /\?revision=\$\{encodeURIComponent\(selectedRevision\.revision_id\)\}/);
+  assert.match(workspace, /\?revision_id=\$\{encodeURIComponent\(selectedRevision\.revision_id\)\}/);
   assert.match(designBriefRoute, /revisionId=\{revisionId\}/);
+  assert.match(designBriefRoute, /key=\{`\$\{id\}:\$\{revisionId \?\? "latest"\}`\}/);
   assert.match(designBriefRoute, /searchParams/);
   assert.match(exportBrief, /apiUrl\(`\/api\/export\/\$\{designId\}\$\{revisionQuery\}`\)/);
   assert.match(exportBrief, /revision_id=\$\{encodeURIComponent\(revisionId\)\}/);
+  assert.match(exportBrief, /body\.revision_id !== revisionId/);
+  assert.match(exportBrief, /setPayload\(null\)/);
+  assert.match(exportBrief, /\/api\/export\/\$\{designId\}\/image\?revision_id=/);
+  assert.match(exportBrief, /crossOrigin="use-credentials"/);
+  assert.match(exportBrief, /data-revision-id=/);
   assert.doesNotMatch(exportBrief, /planItems|productById|demoBrief|attempts/);
   for (const required of [
     "room_brief",
     "generated_at",
+    "revision_request",
     "user_requirements",
     "selected_items",
     "finish_schedule",
@@ -173,6 +180,7 @@ test("T19 export brief uses backend export data and local share route", () => {
   }
   assert.match(exportBrief, /Design ID \{payload\.design_id\}/);
   assert.match(exportBrief, /Generated \{generatedAt\}/);
+  assert.match(exportBrief, /Version direction:/);
   assert.match(exportBrief, /User requirements/);
   assert.match(exportBrief, /Budget summary/);
   assert.match(exportBrief, /itemTotal === payload\.total_price_inr/);

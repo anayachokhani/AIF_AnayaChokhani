@@ -517,6 +517,7 @@ class ExportResponse(BaseModel):
     project_name: str
     generated_at: str
     revision_id: str | None = None
+    revision_request: str | None = None
     concept_image_data_url: str | None = None
     source_image_data_url: str | None = None
     revision_label: str | None = None
@@ -2004,6 +2005,7 @@ def export_design(
         project_name=str(design.get("project_name") or room_facts.get("room_type", "Design brief")).replace("_", " ").title(),
         generated_at=str((selected_revision or {}).get("generated_at") or design["generated_at"]),
         revision_id=str(selected_revision.get("revision_id")) if selected_revision else None,
+        revision_request=str(selected_revision.get("revision_text")) if selected_revision else None,
         concept_image_data_url=exported_image.get("image_data_url"),
         source_image_data_url=next(iter(design.get("source_images") or recovered_sources), None),
         revision_label=selected_revision.get("label") if selected_revision else exported_image.get("label"),
@@ -2025,4 +2027,34 @@ def export_design(
         fit_notes=design["critic_verdict"]["fit"]["notes"],
         vastu_summary=design["critic_verdict"]["vastu"],
         attribution="Amazon Berkeley Objects (ABO); INR prices are curated indicative demo values.",
+    )
+
+
+@app.get("/api/export/{design_id}/image")
+def export_design_image(
+    design_id: str,
+    request: Request,
+    revision_id: str = Query(min_length=1, max_length=160),
+) -> Response:
+    design = design_store.get(design_id)
+    if design is None:
+        raise typed_error(404, "not_found", "design not found")
+    assert_design_owner(design, request_user(request))
+    history, _ = project_concept_history(design)
+    selected_revision = next((revision for revision in history if revision.get("revision_id") == revision_id), None)
+    if selected_revision is None:
+        raise typed_error(422, "invalid_revision", "selected design version was not found")
+    image_data_url = selected_revision.get("image_data_url")
+    if not image_data_url:
+        raise typed_error(404, "image_not_found", "selected design version has no generated image")
+    mime_type, image_bytes = image_bytes_from_data_url(str(image_data_url))
+    return Response(
+        content=image_bytes,
+        media_type=mime_type,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "X-Design-Revision": revision_id,
+        },
     )

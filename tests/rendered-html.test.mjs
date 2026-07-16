@@ -102,4 +102,8 @@ test("server-renders the T19 local export brief route shell", async () => {
   assert.match(html, /Export brief/);
   assert.match(html, /Loading design brief/);
   assert.match(html, /Fetching the saved design, catalogue items, prices, and checks/);
+
+  const selectedVersion = await render("/design/demo-design/brief?revision_id=revision-selected");
+  assert.equal(selectedVersion.status, 200);
+  assert.match(await selectedVersion.text(), /revision-selected/);
 });
