@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from formaos.agents.critic import CriticValidationError, critique_design
-from formaos.agents.grounder import GroundedSlot, GrounderOutput, SlotConstraints
+from formaos.agents.grounder import GroundedSlot, GrounderOutput, GroundingFailure, SlotConstraints
 from formaos.agents.pipeline import PlannerDesignerGrounderCriticResult, run_planner_designer_grounder_critic
 from formaos.agents.planner import PlannerNeed, PlannerOutput, RoomFacts
 from formaos.catalogue.index_catalogue import build_index
@@ -109,6 +109,33 @@ def test_critic_catches_fake_item_id() -> None:
 
     assert verdict.sourceability.status == CheckStatus.FAIL
     assert any("FAKE-ITEM-123" in note and "curated catalogue" in note for note in verdict.sourceability.notes)
+
+
+def test_missing_catalogue_match_is_not_reported_as_bad_room_fit() -> None:
+    brief = create_room_brief(room_type="bedroom", width=12, depth=14, units="ft", budget_inr=120000)
+    constraints = SlotConstraints(max_width_cm=250, max_depth_cm=200, max_price_inr=12000)
+    missing_rug = GroundedSlot(
+        slot=DesignSlot(slot_id="slot_rug", category="rug", budget_share=0.1, placement_hint="C"),
+        placement_zone="C",
+        constraints=constraints,
+        failure=GroundingFailure(
+            slot_id="slot_rug",
+            category="rug",
+            code="retrieval",
+            blocked_by="no_catalogue_match",
+            message="No rug matched the constraints.",
+            constraints=constraints,
+            query="bedroom rug",
+        ),
+    )
+
+    verdict = critique_design(brief, GrounderOutput(grounded_slots=[missing_rug]), catalogue_path=CATALOGUE_PATH)
+
+    assert verdict.fit.status == CheckStatus.PASS
+    assert "Fit will be checked for rug" in verdict.fit.notes[0]
+    assert verdict.sourceability.status == CheckStatus.FAIL
+    assert "available rug" in verdict.sourceability.notes[0]
+    assert verdict.passed is False
 
 
 def test_critic_calls_vastu_only_when_requested_and_catches_violation() -> None:

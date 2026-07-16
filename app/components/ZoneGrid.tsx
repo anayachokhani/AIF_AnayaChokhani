@@ -4,6 +4,7 @@ export type Zone = (typeof zones)[number];
 
 export type ZoneGridItem = {
   slot: string;
+  detail?: string;
   zone: Zone;
 };
 
@@ -21,8 +22,8 @@ export function ZoneGrid({ items }: ZoneGridProps) {
             <strong>{zone}</strong>
             {zoneItems.length ? (
               <div className="zone-chip-list">
-                {zoneItems.map((item) => (
-                  <span className="zone-chip" key={`${zone}-${item.slot}`}>
+                {zoneItems.map((item, index) => (
+                  <span className="zone-chip" key={`${zone}-${item.slot}-${item.detail ?? ""}-${index}`} title={item.detail}>
                     {item.slot}
                   </span>
                 ))}

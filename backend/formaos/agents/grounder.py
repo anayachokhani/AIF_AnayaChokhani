@@ -14,7 +14,6 @@ from formaos.room_state import brief_dimensions_cm
 
 DEFAULT_CATALOGUE_PATH = Path("data/curated/abo_mvp_catalogue_with_images.csv")
 DEFAULT_CHROMA_PATH = Path("data/vectorstores/chroma")
-MIN_ALTERNATIVES = 2
 MAX_ALTERNATIVES = 3
 FailureCode = Literal["category", "width", "depth", "dimensions", "budget", "retrieval"]
 
@@ -260,7 +259,7 @@ def ground_slot(
         chroma_path=chroma_path,
     )
     results = sorted(results, key=lambda item: room_relevance_score(brief, slot, item))
-    if len(results) < MIN_ALTERNATIVES + 1:
+    if not results:
         return GroundedSlot(
             slot=slot,
             placement_zone=placement_zone,

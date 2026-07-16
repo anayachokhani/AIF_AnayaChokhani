@@ -21,6 +21,17 @@ type ExportItem = {
   placement_zone?: string | null;
 };
 
+type ExportFinish = {
+  category: string;
+  recommendation: string;
+  quantity: string;
+  note: string;
+  colourName: string;
+  hex: string;
+  link: string;
+  linkLabel: string;
+};
+
 type ExportPayload = {
   design_id: string;
   project_name: string;
@@ -42,6 +53,7 @@ type ExportPayload = {
     missing_questions: string[];
   };
   selected_items: ExportItem[];
+  finish_schedule: ExportFinish[];
   total_price_inr: number;
   budget_summary: {
     budget_inr: number;
@@ -69,16 +81,6 @@ function imagePath(item: ExportItem) {
   return "/product-placeholder.svg";
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[character] ?? character);
-}
-
 async function waitForImages(container: ParentNode) {
   const images = Array.from(container.querySelectorAll("img"));
   await Promise.all(images.map(async (image) => {
@@ -92,54 +94,13 @@ async function waitForImages(container: ParentNode) {
   }));
 }
 
-async function imageSourceAsDataUrl(source: string) {
-  if (source.startsWith("data:")) return source;
-  const response = await fetch(new URL(source, window.location.origin), { credentials: "include" });
-  if (!response.ok) return source;
-  const blob = await response.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-const downloadedBriefStyles = `
-  * { box-sizing: border-box; }
-  body { margin: 0; background: #f5f3ef; color: #171614; font: 14px/1.5 Arial, sans-serif; }
-  main { width: min(1100px, calc(100% - 40px)); margin: 24px auto; }
-  h1, h2, h3, p { margin-top: 0; }
-  h1 { font: 600 34px/1.1 Georgia, serif; }
-  h2 { font-size: 20px; } h3 { margin-bottom: 5px; font-size: 15px; }
-  .eyebrow, .product-category { color: #a94328; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-  .export-heading { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
-  .export-actions { display: none; }
-  .export-room-visuals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
-  .export-room-visuals figure { margin: 0; } .export-room-visuals figcaption { padding-top: 6px; color: #667069; }
-  .export-room-visuals img { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 6px; }
-  .export-visuals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
-  .export-visuals img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; }
-  .brief-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
-  article, .export-attribution { padding: 16px; border: 1px solid #dedbd4; border-radius: 6px; background: white; }
-  dl { margin: 0; } dl div { display: flex; justify-content: space-between; gap: 20px; padding: 8px 0; border-bottom: 1px solid #ece9e3; }
-  dt { color: #69716b; } dd { margin: 0; text-align: right; font-weight: 700; }
-  .shopping-list { display: grid; gap: 10px; }
-  .product-row { display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
-  .product-row img { width: 78px; aspect-ratio: 1; object-fit: cover; border-radius: 5px; }
-  .product-row p { margin-bottom: 3px; color: #69716b; }
-  .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; } .check { padding: 4px 8px; border-radius: 4px; background: #edf3eb; }
-  .export-note-list { padding-left: 18px; } .export-attribution { margin-top: 18px; }
-  @media print { @page { size: A4; margin: 14mm; } body { background: white; } main { width: 100%; margin: 0; } article, figure, .product-row { break-inside: avoid; } }
-  @media (max-width: 700px) { .brief-grid, .export-room-visuals { grid-template-columns: 1fr; } .export-visuals { grid-template-columns: repeat(2, 1fr); } }
-`;
-
 export function ExportBriefClient({ designId, revisionId }: { designId: string; revisionId?: string }) {
   const [payload, setPayload] = useState<ExportPayload | null>(null);
   const [error, setError] = useState("");
   const [authRequired, setAuthRequired] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [exportAction, setExportAction] = useState<"" | "printing" | "downloading">("");
+  const [exportError, setExportError] = useState("");
   const revisionQuery = revisionId ? `?revision_id=${encodeURIComponent(revisionId)}` : "";
   const briefPath = `/design/${designId}/brief${revisionId ? `?revision=${encodeURIComponent(revisionId)}` : ""}`;
 
@@ -189,26 +150,62 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
     const brief = document.querySelector<HTMLElement>(".export-brief-page");
     if (!brief || !payload) return;
     setExportAction("downloading");
+    setExportError("");
     try {
       await waitForImages(brief);
-      const clone = brief.cloneNode(true) as HTMLElement;
-      clone.querySelectorAll(".export-actions").forEach((element) => element.remove());
-      const sourceImages = Array.from(brief.querySelectorAll<HTMLImageElement>("img"));
-      const clonedImages = Array.from(clone.querySelectorAll<HTMLImageElement>("img"));
-      await Promise.all(clonedImages.map(async (image, index) => {
-        const source = sourceImages[index]?.currentSrc || sourceImages[index]?.src || image.src;
-        image.src = await imageSourceAsDataUrl(source).catch(() => source);
-      }));
-      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(payload.project_name)} design brief</title><style>${downloadedBriefStyles}</style></head><body>${clone.outerHTML}</body></html>`;
-      const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-      const link = document.createElement("a");
-      link.href = url;
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(brief, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: Math.max(1100, brief.scrollWidth),
+        onclone: (clonedDocument) => {
+          clonedDocument.querySelectorAll(".export-actions").forEach((element) => element.remove());
+          const clonedBrief = clonedDocument.querySelector<HTMLElement>(".export-brief-page");
+          if (clonedBrief) {
+            clonedBrief.style.width = "1060px";
+            clonedBrief.style.margin = "0 auto";
+            clonedBrief.style.padding = "24px";
+            clonedBrief.style.background = "#ffffff";
+          }
+        },
+      });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      const margin = 10;
+      const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+      const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+      const sliceHeight = Math.floor((canvas.width * pageHeight) / pageWidth);
+      let offset = 0;
+      let page = 0;
+      while (offset < canvas.height) {
+        const currentHeight = Math.min(sliceHeight, canvas.height - offset);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = currentHeight;
+        const context = pageCanvas.getContext("2d");
+        if (!context) throw new Error("PDF canvas could not be created");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        context.drawImage(canvas, 0, offset, canvas.width, currentHeight, 0, 0, canvas.width, currentHeight);
+        if (page > 0) pdf.addPage();
+        const renderedHeight = (currentHeight * pageWidth) / canvas.width;
+        pdf.addImage(pageCanvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, pageWidth, renderedHeight, undefined, "FAST");
+        offset += currentHeight;
+        page += 1;
+      }
+      pdf.setProperties({
+        title: `${payload.project_name} design brief`,
+        subject: payload.revision_label || "YourSpace selected design",
+        creator: "YourSpace",
+      });
       const versionSuffix = payload.revision_label ? `-${payload.revision_label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
-      link.download = `${payload.project_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || payload.design_id}${versionSuffix}-design-brief.html`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      pdf.save(`${payload.project_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || payload.design_id}${versionSuffix}-design-brief.pdf`);
+    } catch (caught) {
+      setExportError(caught instanceof Error ? caught.message : "The PDF could not be created.");
     } finally {
       setExportAction("");
     }
@@ -258,11 +255,12 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
         <div className="export-actions">
           <Link className="secondary-button" href="/workspace">Back to projects</Link>
           <button className="secondary-button" type="button" disabled={Boolean(exportAction)} onClick={downloadBrief}>
-            {exportAction === "downloading" ? "Preparing..." : "Download brief"}
+            {exportAction === "downloading" ? "Preparing PDF..." : "Download PDF"}
           </button>
           <button className="primary-button print-button" type="button" disabled={Boolean(exportAction)} onClick={printBrief}>
             {exportAction === "printing" ? "Preparing..." : "Print or save PDF"}
           </button>
+          {exportError ? <p className="export-action-error" role="alert">{exportError}</p> : null}
         </div>
       </section>
 
@@ -374,6 +372,30 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
           ))}
         </div>
       </section>
+
+      {payload.finish_schedule.length ? (
+        <section className="export-finishes" aria-label="Selected materials and finishes">
+          <div className="export-section-heading">
+            <span className="eyebrow">Selected version</span>
+            <h2>Materials, finishes, and colours</h2>
+          </div>
+          <div className="export-finish-grid">
+            {payload.finish_schedule.map((finish) => (
+              <article key={finish.category}>
+                <div className="export-finish-heading">
+                  <span>{finish.category}</span>
+                  <i style={{ backgroundColor: finish.hex }} aria-label={`${finish.colourName} ${finish.hex}`} />
+                </div>
+                <h3>{finish.recommendation}</h3>
+                <p><strong>{finish.colourName}</strong> <code>{finish.hex}</code></p>
+                <p>{finish.quantity}</p>
+                <p>{finish.note}</p>
+                <a href={finish.link} target="_blank" rel="noreferrer">{finish.linkLabel}</a>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="brief-grid export-summary-grid">
         <article className="logic-panel">

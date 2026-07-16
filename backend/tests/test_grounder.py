@@ -121,6 +121,38 @@ def test_normal_living_room_selects_real_catalogue_items_with_alternatives(
     assert_grounded_items_pass_filters(grounded, catalogue_ids)
 
 
+def test_single_valid_catalogue_result_is_selected_without_requiring_alternatives(monkeypatch) -> None:
+    brief = create_room_brief(room_type="bedroom", width=9, depth=7, units="ft", budget_inr=245000)
+    slot = DesignSlot(
+        slot_id="slot_rug",
+        category="rug",
+        target_width_cm=214,
+        target_depth_cm=132.3,
+        budget_share=0.08,
+        placement_hint="C",
+    )
+    result = {
+        "item_id": "B071777YN3",
+        "title": "Hand-woven natural rug",
+        "category": "rug",
+        "width_cm": 182.9,
+        "depth_cm": 121.9,
+        "height_cm": 1.0,
+        "price_inr": 7100,
+        "material": "wool",
+        "color": "natural",
+        "image_path": "/product-images/B071777YN3-A194kPVvFmL.jpg",
+        "image_available": True,
+    }
+    monkeypatch.setattr("formaos.agents.grounder.search_items", lambda *_args, **_kwargs: [result])
+
+    grounded = ground_design(brief, [slot], catalogue_path=CATALOGUE_PATH)
+
+    assert not grounded.failures
+    assert grounded.grounded_slots[0].selected_item.item_id == "B071777YN3"
+    assert grounded.grounded_slots[0].alternatives == []
+
+
 def test_bedroom_storage_prefers_actual_storage_furniture(chroma_path: Path) -> None:
     brief = create_room_brief(
         room_type="bedroom",

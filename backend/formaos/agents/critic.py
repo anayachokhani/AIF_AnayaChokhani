@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
-from formaos.agents.grounder import DEFAULT_CATALOGUE_PATH, GroundedSlot, GrounderOutput
+from formaos.agents.grounder import DEFAULT_CATALOGUE_PATH, GrounderOutput
 from formaos.contracts import CatalogueItem, CheckStatus, RoomBrief
 from formaos.vastu.checker import VastuCheckResult, check_vastu
 
@@ -49,13 +49,14 @@ def selected_items(grounded: GrounderOutput) -> list[CatalogueItem]:
 
 def check_fit(grounded: GrounderOutput) -> CriticCheckResult:
     notes: list[str] = []
+    checked_count = 0
+    pending_categories: list[str] = []
     for grounded_slot in grounded.grounded_slots:
         item = grounded_slot.selected_item
         if item is None:
-            failure = grounded_slot.failure
-            reason = failure.blocked_by if failure else "missing_selection"
-            notes.append(f"Select a real {grounded_slot.slot.category} for {grounded_slot.slot.slot_id}; blocked by {reason}.")
+            pending_categories.append(grounded_slot.slot.category.replace("_", " "))
             continue
+        checked_count += 1
         constraints = grounded_slot.constraints
         if item.width_cm > constraints.max_width_cm:
             notes.append(
@@ -67,7 +68,12 @@ def check_fit(grounded: GrounderOutput) -> CriticCheckResult:
                 f"Replace {item.item_id}: depth {item.depth_cm:.1f} cm exceeds "
                 f"{constraints.max_depth_cm:.1f} cm for {grounded_slot.slot.slot_id}."
             )
-    return CriticCheckResult(name="fit", status=CheckStatus.FAIL if notes else CheckStatus.PASS, notes=notes)
+    if notes:
+        return CriticCheckResult(name="fit", status=CheckStatus.FAIL, notes=notes)
+    summary = f"All {checked_count} selected items fit within their approved room footprints."
+    if pending_categories:
+        summary += f" Fit will be checked for {', '.join(pending_categories)} after a catalogue item is selected."
+    return CriticCheckResult(name="fit", status=CheckStatus.PASS, notes=[summary])
 
 
 def check_budget(brief: RoomBrief, items: list[CatalogueItem]) -> tuple[CriticCheckResult, int]:
@@ -81,8 +87,18 @@ def check_budget(brief: RoomBrief, items: list[CatalogueItem]) -> tuple[CriticCh
     return CriticCheckResult(name="budget", status=CheckStatus.FAIL if notes else CheckStatus.PASS, notes=notes), total
 
 
-def check_sourceability(items: list[CatalogueItem], catalogue_ids: set[str]) -> CriticCheckResult:
-    notes = [f"Replace fake or unavailable item ID {item.item_id} with a curated catalogue item." for item in items if item.item_id not in catalogue_ids]
+def check_sourceability(grounded: GrounderOutput, catalogue_ids: set[str]) -> CriticCheckResult:
+    notes: list[str] = []
+    for grounded_slot in grounded.grounded_slots:
+        item = grounded_slot.selected_item
+        if item is None:
+            failure = grounded_slot.failure
+            reason = failure.blocked_by if failure else "missing catalogue selection"
+            notes.append(
+                f"Select an available {grounded_slot.slot.category.replace('_', ' ')}; catalogue matching was blocked by {reason}."
+            )
+        elif item.item_id not in catalogue_ids:
+            notes.append(f"Replace fake or unavailable item ID {item.item_id} with a curated catalogue item.")
     return CriticCheckResult(name="sourceability", status=CheckStatus.FAIL if notes else CheckStatus.PASS, notes=notes)
 
 
@@ -115,7 +131,7 @@ def critique_design(
     items = selected_items(valid_grounded)
     fit = check_fit(valid_grounded)
     budget, total_price = check_budget(valid_brief, items)
-    sourceability = check_sourceability(items, catalogue_ids)
+    sourceability = check_sourceability(valid_grounded, catalogue_ids)
     vastu, vastu_result = check_vastu_if_requested(valid_brief, items)
     checks = [fit, budget, sourceability, vastu]
     passed = all(check.status in {CheckStatus.PASS, CheckStatus.WARN, CheckStatus.SKIPPED} for check in checks)

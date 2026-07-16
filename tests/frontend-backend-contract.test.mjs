@@ -77,11 +77,11 @@ test("workspace owns the core T18 journey and calls only backend API routes", ()
   assert.match(workspace, /revision_text/);
   assert.match(workspace, /base_revision_id/);
   assert.match(workspace, /selectedRevisionId/);
-  assert.match(workspace, /refresh_products: refreshProducts/);
+  assert.match(workspace, /refresh_products: refreshRequested/);
   assert.match(workspace, /Refresh furniture & image/);
   assert.match(workspace, /styleCards/);
   assert.match(workspace, /\/style-images\/modern\.png/);
-  assert.match(workspace, /colour_palette: palettePrompt/);
+  assert.match(workspace, /colour_palette: revisionText \? scheduledPalette : palettePrompt/);
   assert.match(workspace, /Show at least four palette colours/);
   assert.match(workspace, /ys-style-swatches/);
   assert.match(workspace, /Complete material list/);
@@ -129,8 +129,11 @@ test("workspace exposes Vastu, shopping, budget, revision, and error states", ()
   assert.match(workspace, /reviseDesign/);
   assert.match(workspace, /Revising\.\.\./);
   assert.match(workspace, /Retry pending image/);
+  assert.match(workspace, /Fits room/);
+  assert.match(workspace, /Missing item/);
   assert.match(workspace, /retryPendingRevision/);
   assert.match(workspace, /Regenerate selected version/);
+  assert.match(workspace, /Generate room image/);
   assert.match(workspace, /Design version navigation/);
   assert.match(workspace, />Previous</);
   assert.match(workspace, />Next</);
@@ -154,6 +157,7 @@ test("T19 export brief uses backend export data and local share route", () => {
     "generated_at",
     "user_requirements",
     "selected_items",
+    "finish_schedule",
     "total_price_inr",
     "budget_summary",
     "fit_notes",
@@ -162,7 +166,7 @@ test("T19 export brief uses backend export data and local share route", () => {
     "Amazon Berkeley Objects",
     "curated indicative demo values",
     "Print or save PDF",
-    "Download brief",
+    "Download PDF",
     "product-placeholder.svg",
   ]) {
     assert.match(exportBrief, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), required);
@@ -178,8 +182,13 @@ test("T19 export brief uses backend export data and local share route", () => {
   assert.match(exportBrief, /waitForImages/);
   assert.match(exportBrief, /concept_image_data_url/);
   assert.match(exportBrief, /source_image_data_url/);
-  assert.match(exportBrief, /imageSourceAsDataUrl/);
-  assert.match(exportBrief, /new Blob\(\[html\]/);
+  assert.match(exportBrief, /import\("html2canvas"\)/);
+  assert.match(exportBrief, /import\("jspdf"\)/);
+  assert.match(exportBrief, /new jsPDF/);
+  assert.match(exportBrief, /pdf\.addPage\(\)/);
+  assert.match(exportBrief, /pdf\.save\(/);
+  assert.match(exportBrief, /design-brief\.pdf/);
+  assert.doesNotMatch(exportBrief, /design-brief\.html|text\/html/);
   assert.match(css, /@page/);
   assert.match(css, /page-break-inside: avoid/);
   assert.match(css, /overflow: visible !important/);
@@ -204,6 +213,27 @@ test("account and project access use backend sessions instead of editable browse
   assert.match(apiMain, /httponly=True/);
   assert.match(apiMain, /pbkdf2_hmac/);
   assert.match(apiMain, /authenticated_user/);
+  assert.match(apiMain, /@app\.patch\("\/api\/auth\/profile"/);
+  assert.match(workspace, /\/api\/auth\/profile/);
+  assert.match(workspace, /Save profile/);
+  assert.match(workspace, /preferred_units/);
+  assert.match(workspace, /homeowner_location/);
+  assert.match(workspace, /finish_schedule/);
+  assert.match(workspace, /material_schedule/);
+  assert.match(workspace, /selectedRevision\.finish_schedule/);
+  assert.match(workspace, /displayedSlots\.map/);
+  assert.match(workspace, /refreshRequested/);
+  assert.match(apiMain, /synchronize_refreshed_products/);
+  assert.match(apiMain, /analyze_generated_finish_schedule/);
+  assert.match(apiMain, /analyze_generated_products/);
+  assert.match(apiMain, /"finish_schedule": finish_schedule/);
+  assert.match(workspace, /Colours sampled from/);
+  assert.match(workspace, /Paintings & wall art/);
+  assert.match(workspace, /category: "Bedding"/);
+  assert.match(workspace, /View \{visualLabel\} in design/);
+  assert.match(workspace, /DesignElementPreview/);
+  assert.match(workspace, /closest visual match/);
+  assert.match(workspace, /cannot be verified in this render/);
   assert.match(workspace, /disabled=\{index > step\}/);
   assert.match(workspace, /disabled=\{!design\}/);
   assert.match(login, /showPassword/);

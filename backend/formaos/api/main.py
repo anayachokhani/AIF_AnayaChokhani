@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import binascii
+from copy import deepcopy
 import hashlib
 import hmac
 import json
@@ -210,11 +212,39 @@ class FileAuthStore:
             "id": user_id,
             "name": name.strip(),
             "email": normalized_email,
+            "location": "",
+            "home_type": "apartment",
+            "preferred_units": "ft",
             "password_salt": salt,
             "password_hash": self._password_hash(password, salt),
             "created_at": datetime.now(UTC).isoformat(),
         }
         self._users[user_id] = user
+        self._flush()
+        return self.public_user(user)
+
+    def update_profile(
+        self,
+        user_id: str,
+        *,
+        name: str,
+        location: str,
+        home_type: str,
+        preferred_units: str,
+    ) -> dict[str, str]:
+        self._load()
+        user = self._users.get(user_id)
+        if user is None:
+            raise typed_error(404, "not_found", "account not found")
+        user.update(
+            {
+                "name": name.strip(),
+                "location": location.strip(),
+                "home_type": home_type,
+                "preferred_units": preferred_units,
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+        )
         self._flush()
         return self.public_user(user)
 
@@ -272,7 +302,14 @@ class FileAuthStore:
 
     @staticmethod
     def public_user(user: dict[str, Any]) -> dict[str, str]:
-        return {"id": str(user["id"]), "name": str(user["name"]), "email": str(user["email"])}
+        return {
+            "id": str(user["id"]),
+            "name": str(user["name"]),
+            "email": str(user["email"]),
+            "location": str(user.get("location") or ""),
+            "home_type": str(user.get("home_type") or "apartment"),
+            "preferred_units": str(user.get("preferred_units") or "ft"),
+        }
 
 
 auth_store = FileAuthStore(AUTH_STORE_PATH)
@@ -362,6 +399,13 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
 
 
+class UpdateProfileRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    location: str = Field(default="", max_length=120)
+    home_type: str = Field(default="apartment", pattern="^(apartment|house|condo|townhouse|other)$")
+    preferred_units: str = Field(default="ft", pattern="^(ft|m|cm)$")
+
+
 class SelectItemRequest(BaseModel):
     slot_id: str = Field(..., min_length=1, max_length=160)
     item_id: str = Field(..., min_length=1, max_length=160)
@@ -380,6 +424,7 @@ class ConceptImageRequest(BaseModel):
     photo_notes: list[str] = Field(default_factory=list)
     photo_data_urls: list[str] = Field(default_factory=list, max_length=4)
     revision_text: str = Field(default="", max_length=1200)
+    finish_schedule: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
     vastu_enabled: bool = False
     grounded_design: dict[str, Any] | None = None
 
@@ -400,6 +445,9 @@ class AuthUser(BaseModel):
     id: str
     name: str
     email: str
+    location: str = ""
+    home_type: str = "apartment"
+    preferred_units: str = "ft"
 
 
 class AuthResponse(BaseModel):
@@ -475,6 +523,7 @@ class ExportResponse(BaseModel):
     room_brief: dict[str, Any]
     user_requirements: dict[str, Any]
     selected_items: list[dict[str, Any]]
+    finish_schedule: list[dict[str, Any]]
     total_price_inr: int
     budget_summary: dict[str, Any]
     fit_notes: list[str]
@@ -569,9 +618,10 @@ def summarize_design(design: dict[str, Any]) -> DesignSummary:
     selected_count = sum(1 for slot in grounded_slots if slot.get("selected_item"))
     first_image_path = next(
         (
-            slot.get("selected_item", {}).get("image_path")
+            (slot.get("selected_item") or {}).get("image_path")
             for slot in grounded_slots
-            if slot.get("selected_item", {}).get("image_available") and slot.get("selected_item", {}).get("image_path")
+            if (slot.get("selected_item") or {}).get("image_available")
+            and (slot.get("selected_item") or {}).get("image_path")
         ),
         None,
     )
@@ -632,6 +682,91 @@ def selected_product_snapshots(design: dict[str, Any] | None) -> list[dict[str, 
             }
         )
     return snapshots
+
+
+def requested_product_categories(message: str, grounded_slots: list[dict[str, Any]]) -> set[str]:
+    normalized = re.sub(r"[^a-z0-9]+", " ", message.lower()).strip()
+    action_words = {"change", "replace", "swap", "refresh", "update", "make", "different", "new", "another"}
+    if not action_words.intersection(normalized.split()):
+        return set()
+    categories = {
+        str(slot.get("slot", {}).get("category") or "")
+        for slot in grounded_slots
+        if slot.get("slot", {}).get("category")
+    }
+    broad_terms = {"furniture", "furnishings", "products", "catalogue", "all", "every"}
+    if broad_terms.intersection(normalized.split()):
+        return categories
+    return {
+        category
+        for category in categories
+        if category.lower().replace("_", " ") in normalized
+        or any(
+            token in normalized.split()
+            for token in category.lower().replace("_", " ").split()
+            if len(token) > 2
+        )
+    }
+
+
+def synchronize_refreshed_products(
+    previous_slots: list[dict[str, Any]],
+    refreshed_slots: list[dict[str, Any]],
+    message: str,
+) -> list[dict[str, Any]]:
+    target_categories = requested_product_categories(message, previous_slots)
+    if not target_categories:
+        return refreshed_slots
+    previous_by_slot = {
+        str(slot.get("slot", {}).get("slot_id") or ""): slot
+        for slot in previous_slots
+    }
+    meaningful_words = {
+        word
+        for word in re.sub(r"[^a-z0-9]+", " ", message.lower()).split()
+        if len(word) > 2 and word not in {"change", "replace", "refresh", "update", "make", "different", "another", "furniture"}
+    }
+    for refreshed_slot in refreshed_slots:
+        slot = refreshed_slot.get("slot", {})
+        category = str(slot.get("category") or "")
+        if category not in target_categories:
+            previous = previous_by_slot.get(str(slot.get("slot_id") or ""))
+            if previous:
+                refreshed_slot["selected_item"] = previous.get("selected_item")
+                refreshed_slot["alternatives"] = list(previous.get("alternatives") or [])
+            continue
+        previous = previous_by_slot.get(str(slot.get("slot_id") or ""), {})
+        current_id = str((previous.get("selected_item") or {}).get("item_id") or "")
+        candidates: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        for item in [
+            refreshed_slot.get("selected_item"),
+            *(refreshed_slot.get("alternatives") or []),
+            *(previous.get("alternatives") or []),
+        ]:
+            item_id = str((item or {}).get("item_id") or "")
+            if not item_id or item_id in seen_ids:
+                continue
+            seen_ids.add(item_id)
+            candidates.append(dict(item))
+        replacements = [item for item in candidates if str(item.get("item_id") or "") != current_id]
+        if not replacements:
+            continue
+
+        def match_score(item: dict[str, Any]) -> tuple[int, int]:
+            searchable = " ".join(
+                str(item.get(field) or "").lower()
+                for field in ("title", "color", "material", "style_text")
+            )
+            return sum(word in searchable for word in meaningful_words), -int(item.get("price_inr") or 0)
+
+        selected = max(replacements, key=match_score)
+        selected["placement_zone"] = refreshed_slot.get("placement_zone")
+        refreshed_slot["selected_item"] = selected
+        refreshed_slot["alternatives"] = [
+            item for item in candidates if item.get("item_id") != selected.get("item_id")
+        ][:3]
+    return refreshed_slots
 
 
 def project_product_index(design: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -808,7 +943,7 @@ def build_concept_prompt(
     if request.revision_text and request.revision_mode == "variation":
         revision_instruction = (
             f"Variation request: {clean_prompt_part(request.revision_text)}. Create a visibly different design alternative, not a copy of Image 1. "
-            "Keep the same room shell, viewpoint, scale, major furniture zones, and approved product categories, but make at least five obvious coordinated changes across wall colour or treatment, upholstery and textiles, rug, curtains, lighting fixtures, artwork, plants, and decorative objects. "
+            "Keep the same room shell, viewpoint, scale, furniture zones, and every exact approved catalogue product unless the grounded product list explicitly contains a replacement. Make at least five obvious coordinated changes across wall colour or treatment, curtains, lighting treatment, artwork, plants, textiles, and decorative objects without inventing replacement furniture. "
             "The result must be immediately distinguishable from Image 1 while still unmistakably depicting the same physical room."
         )
     elif request.revision_text:
@@ -963,6 +1098,51 @@ def product_image_references(
     return references
 
 
+def product_match_candidates(
+    design: dict[str, Any] | None,
+    *,
+    per_slot: int = 3,
+    limit: int = 24,
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    if not design:
+        return candidates
+    for grounded_slot in design.get("grounder_output", {}).get("grounded_slots", []):
+        category = str(grounded_slot.get("slot", {}).get("category") or "item")
+        slot_candidates = [
+            grounded_slot.get("selected_item"),
+            *(grounded_slot.get("alternatives") or []),
+        ]
+        added_for_slot = 0
+        for item in slot_candidates:
+            item_id = str((item or {}).get("item_id") or "")
+            image_path = str((item or {}).get("image_path") or "").lstrip("/")
+            if not item_id or item_id in seen_ids or not image_path.startswith("product-images/"):
+                continue
+            try:
+                image_bytes = (APP_ROOT / "public" / image_path).read_bytes()
+            except OSError:
+                continue
+            suffix = Path(image_path).suffix.lower()
+            mime_type = "image/png" if suffix == ".png" else "image/webp" if suffix == ".webp" else "image/jpeg"
+            candidates.append(
+                {
+                    "category": category,
+                    "placement_zone": grounded_slot.get("placement_zone"),
+                    "item": dict(item),
+                    "image_data_url": f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}",
+                }
+            )
+            seen_ids.add(item_id)
+            added_for_slot += 1
+            if added_for_slot >= per_slot or len(candidates) >= limit:
+                break
+        if len(candidates) >= limit:
+            break
+    return candidates
+
+
 async def edit_openai_image(prompt: str, image_references: list[tuple[str, str]]) -> str | None:
     api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API")
     if not api_key:
@@ -1002,6 +1182,296 @@ async def edit_openai_image(prompt: str, image_references: list[tuple[str, str]]
     payload = response.json()
     image_base64 = payload.get("data", [{}])[0].get("b64_json")
     return f"data:image/jpeg;base64,{image_base64}" if image_base64 else None
+
+
+def response_output_text(payload: dict[str, Any]) -> str | None:
+    for output in payload.get("output", []):
+        if not isinstance(output, dict) or output.get("type") != "message":
+            continue
+        for content in output.get("content", []):
+            if isinstance(content, dict) and content.get("type") == "output_text":
+                text = content.get("text")
+                if isinstance(text, str) and text.strip():
+                    return text
+    return None
+
+
+def merge_observed_finish_schedule(
+    proposed_schedule: list[dict[str, Any]],
+    observed_finishes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    observed_by_category = {
+        str(item.get("category", "")).strip().lower(): item
+        for item in observed_finishes
+        if isinstance(item, dict) and item.get("visible") is True
+    }
+    merged: list[dict[str, Any]] = []
+    for proposed in proposed_schedule:
+        item = dict(proposed)
+        category = str(item.get("category", "")).strip()
+        observed = observed_by_category.get(category.lower())
+        if not observed:
+            merged.append(item)
+            continue
+        colour_name = str(observed.get("colour_name", "")).strip()
+        hex_code = str(observed.get("hex", "")).strip().upper()
+        if not colour_name or not re.fullmatch(r"#[0-9A-F]{6}", hex_code):
+            merged.append(item)
+            continue
+        item["colourName"] = colour_name
+        item["hex"] = hex_code
+        item["colourSource"] = "generated_image"
+        bounding_box = observed.get("bounding_box")
+        if isinstance(bounding_box, dict):
+            coordinates = {
+                key: int(bounding_box.get(key, 0))
+                for key in ("x", "y", "width", "height")
+                if isinstance(bounding_box.get(key), (int, float))
+            }
+            if (
+                len(coordinates) == 4
+                and coordinates["width"] > 0
+                and coordinates["height"] > 0
+                and all(0 <= value <= 1000 for value in coordinates.values())
+                and coordinates["x"] + coordinates["width"] <= 1000
+                and coordinates["y"] + coordinates["height"] <= 1000
+            ):
+                item["imageCrop"] = coordinates
+        normalized_category = category.lower()
+        if normalized_category == "wall paint":
+            item["recommendation"] = f"{colour_name} washable low-sheen emulsion"
+        elif normalized_category == "flooring":
+            item["recommendation"] = f"{colour_name} matte wood or stone-look finish"
+        elif normalized_category == "tiles":
+            item["recommendation"] = f"{colour_name} matte large-format tile"
+        merged.append(item)
+    return merged
+
+
+async def analyze_generated_finish_schedule(
+    image_data_url: str,
+    proposed_schedule: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API")
+    categories = [
+        str(item.get("category", "")).strip()
+        for item in proposed_schedule
+        if isinstance(item, dict) and item.get("category")
+    ]
+    if not api_key or not image_data_url or not categories:
+        return proposed_schedule
+    schema = {
+        "type": "object",
+        "properties": {
+            "finishes": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "category": {"type": "string"},
+                        "colour_name": {"type": "string"},
+                        "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+                        "visible": {"type": "boolean"},
+                        "bounding_box": {
+                            "type": "object",
+                            "properties": {
+                                "x": {"type": "integer", "minimum": 0, "maximum": 1000},
+                                "y": {"type": "integer", "minimum": 0, "maximum": 1000},
+                                "width": {"type": "integer", "minimum": 0, "maximum": 1000},
+                                "height": {"type": "integer", "minimum": 0, "maximum": 1000},
+                            },
+                            "required": ["x", "y", "width", "height"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "required": ["category", "colour_name", "hex", "visible", "bounding_box"],
+                    "additionalProperties": False,
+                },
+            }
+        },
+        "required": ["finishes"],
+        "additionalProperties": False,
+    }
+    prompt = (
+        "Inspect this final rendered interior image and identify the dominant visible colour for each requested "
+        "material category. Return the category names exactly as supplied. Estimate a representative RGB hex "
+        "from the visible pixels and give it a concise professional paint or material colour name. Mark visible "
+        "false when the category cannot actually be seen; do not infer a requested prompt colour that is absent "
+        "from the rendered image. For every visible category, return a tight bounding box around its clearest "
+        "appearance using x, y, width, and height normalized from 0 to 1000. Use four zeros when it is not visible. "
+        f"Requested categories: {json.dumps(categories)}"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                "https://api.openai.com/v1/responses",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": os.environ.get("OPENAI_VISION_MODEL", "gpt-4.1-mini"),
+                    "store": False,
+                    "input": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "input_text", "text": prompt},
+                                {"type": "input_image", "image_url": image_data_url, "detail": "high"},
+                            ],
+                        }
+                    ],
+                    "text": {
+                        "format": {
+                            "type": "json_schema",
+                            "name": "observed_finish_colours",
+                            "strict": True,
+                            "schema": schema,
+                        }
+                    },
+                    "max_output_tokens": 900,
+                },
+            )
+        if response.status_code >= 400:
+            return proposed_schedule
+        output_text = response_output_text(response.json())
+        if not output_text:
+            return proposed_schedule
+        observed = json.loads(output_text).get("finishes", [])
+        if not isinstance(observed, list):
+            return proposed_schedule
+        return merge_observed_finish_schedule(proposed_schedule, observed)
+    except (httpx.RequestError, json.JSONDecodeError, TypeError, ValueError):
+        return proposed_schedule
+
+
+def reconcile_generated_products(
+    design: dict[str, Any] | None,
+    candidates: list[dict[str, Any]],
+    observed_matches: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    proposed = selected_product_snapshots(design)
+    candidates_by_id = {
+        str(candidate.get("item", {}).get("item_id") or ""): candidate
+        for candidate in candidates
+    }
+    matches_by_category = {
+        str(match.get("category") or "").strip().lower(): match
+        for match in observed_matches
+        if isinstance(match, dict)
+    }
+    reconciled: list[dict[str, Any]] = []
+    for snapshot in proposed:
+        category = str(snapshot.get("category") or "item")
+        match = matches_by_category.get(category.lower())
+        if not match or match.get("visible") is not True:
+            reconciled.append({**snapshot, "imageMatch": "not_visible"})
+            continue
+        candidate = candidates_by_id.get(str(match.get("item_id") or ""))
+        if not candidate or str(candidate.get("category") or "").lower() != category.lower():
+            reconciled.append(snapshot)
+            continue
+        confidence = match.get("confidence")
+        reconciled.append(
+            {
+                **candidate["item"],
+                "category": category,
+                "placement_zone": candidate.get("placement_zone") or snapshot.get("placement_zone"),
+                "imageMatch": "closest_catalogue_match",
+                "matchConfidence": round(float(confidence), 2) if isinstance(confidence, (int, float)) else None,
+            }
+        )
+    return reconciled
+
+
+async def analyze_generated_products(
+    image_data_url: str,
+    design: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    proposed = selected_product_snapshots(design)
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API")
+    candidates = product_match_candidates(design)
+    if not api_key or not image_data_url or not candidates:
+        return proposed
+    candidate_ids = [str(candidate["item"].get("item_id")) for candidate in candidates]
+    categories = list(dict.fromkeys(str(candidate["category"]) for candidate in candidates))
+    schema = {
+        "type": "object",
+        "properties": {
+            "products": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "category": {"type": "string", "enum": categories},
+                        "item_id": {"type": "string", "enum": candidate_ids},
+                        "visible": {"type": "boolean"},
+                        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                    },
+                    "required": ["category", "item_id", "visible", "confidence"],
+                    "additionalProperties": False,
+                },
+            }
+        },
+        "required": ["products"],
+        "additionalProperties": False,
+    }
+    content: list[dict[str, Any]] = [
+        {
+            "type": "input_text",
+            "text": (
+                "Image 1 is the final generated room. Compare every clearly visible furniture or decor object "
+                "against the labelled catalogue candidate images that follow. Return one result for each requested "
+                "category. Choose only an item_id supplied for that same category, based on silhouette, proportions, "
+                "material, and colour rather than the prompt's intended selection. If the category is not clearly "
+                "visible in Image 1, mark visible false and use any supplied item_id for that category as a schema "
+                f"placeholder. Requested categories: {json.dumps(categories)}"
+            ),
+        },
+        {"type": "input_image", "image_url": image_data_url, "detail": "high"},
+    ]
+    for index, candidate in enumerate(candidates, start=2):
+        item = candidate["item"]
+        content.extend(
+            [
+                {
+                    "type": "input_text",
+                    "text": clean_prompt_part(
+                        f"Image {index} candidate: category {candidate['category']}; item_id {item.get('item_id')}; "
+                        f"title {item.get('title')}; material {item.get('material')}; colour {item.get('color')}."
+                    ),
+                },
+                {"type": "input_image", "image_url": candidate["image_data_url"], "detail": "low"},
+            ]
+        )
+    try:
+        async with httpx.AsyncClient(timeout=75) as client:
+            response = await client.post(
+                "https://api.openai.com/v1/responses",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": os.environ.get("OPENAI_VISION_MODEL", "gpt-4.1-mini"),
+                    "store": False,
+                    "input": [{"role": "user", "content": content}],
+                    "text": {
+                        "format": {
+                            "type": "json_schema",
+                            "name": "generated_product_matches",
+                            "strict": True,
+                            "schema": schema,
+                        }
+                    },
+                    "max_output_tokens": 1200,
+                },
+            )
+        if response.status_code >= 400:
+            return proposed
+        output_text = response_output_text(response.json())
+        if not output_text:
+            return proposed
+        observed = json.loads(output_text).get("products", [])
+        if not isinstance(observed, list):
+            return proposed
+        return reconcile_generated_products(design, candidates, observed)
+    except (httpx.RequestError, json.JSONDecodeError, TypeError, ValueError):
+        return proposed
 
 
 def run_design_for_session(session_id: str, max_retries: int, design_id: str | None = None) -> dict[str, Any]:
@@ -1059,6 +1529,19 @@ def log_in(payload: LoginRequest, response: Response) -> AuthResponse:
 def auth_me(request: Request) -> AuthResponse:
     user = authenticated_user(request)
     return AuthResponse(user=AuthUser(**user))
+
+
+@app.patch("/api/auth/profile", response_model=AuthResponse)
+def update_profile(payload: UpdateProfileRequest, request: Request) -> AuthResponse:
+    user = authenticated_user(request)
+    updated = auth_store.update_profile(
+        user["id"],
+        name=payload.name,
+        location=payload.location,
+        home_type=payload.home_type,
+        preferred_units=payload.preferred_units,
+    )
+    return AuthResponse(user=AuthUser(**updated))
 
 
 @app.post("/api/auth/logout", response_model=LogoutResponse)
@@ -1164,10 +1647,43 @@ def get_design(design_id: str, request: Request) -> DesignResponse:
     stored_design = design_store.get(design_id)
     if stored_design is None:
         raise typed_error(404, "not_found", "design not found")
-    design = dict(stored_design)
+    design = deepcopy(stored_design)
     assert_design_owner(design, request_user(request))
+    grounded_slots = list(design.get("grounder_output", {}).get("grounded_slots", []))
+    failed_slots = [slot for slot in grounded_slots if not slot.get("selected_item")]
+    if failed_slots and design.get("room_brief"):
+        recovered = ground_design(
+            design["room_brief"],
+            [slot["slot"] for slot in failed_slots],
+            catalogue_path=CATALOGUE_PATH,
+            chroma_path=CHROMA_PATH,
+        ).model_dump(mode="json")
+        recovered_by_id = {
+            str(slot.get("slot", {}).get("slot_id") or ""): slot
+            for slot in recovered.get("grounded_slots", [])
+            if slot.get("selected_item")
+        }
+        if recovered_by_id:
+            design["grounder_output"]["grounded_slots"] = [
+                recovered_by_id.get(str(slot.get("slot", {}).get("slot_id") or ""), slot)
+                for slot in grounded_slots
+            ]
+    if design.get("room_brief") and design.get("grounder_output"):
+        refreshed_verdict = critique_design(
+            design["room_brief"],
+            design["grounder_output"],
+            catalogue_path=CATALOGUE_PATH,
+        ).model_dump(mode="json")
+        if refreshed_verdict != design.get("critic_verdict"):
+            design["critic_verdict"] = refreshed_verdict
+        if refreshed_verdict.get("passed") and design.get("status") == "failed":
+            design["status"] = "passed"
     history, recovered_sources = project_concept_history(design)
-    changed = False
+    changed = (
+        design.get("critic_verdict") != stored_design.get("critic_verdict")
+        or design.get("grounder_output") != stored_design.get("grounder_output")
+        or design.get("status") != stored_design.get("status")
+    )
     if history and history != design.get("concept_history"):
         design["concept_history"] = history
         changed = True
@@ -1224,7 +1740,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
             payload.grounded_design or existing_design,
             remaining_reference_slots,
             revision_text,
-            matched_only=bool(revision_text),
+            matched_only=False,
         )
     )
     reference_labels = [f"Image {index + 1}: {label}" for index, (label, _) in enumerate(references)]
@@ -1245,6 +1761,10 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
         )
     image_source = "revision_from_original_and_current" if has_previous_image and source_images else "revision_from_current" if has_previous_image else "uploaded_room_photo" if source_images else "text_prompt"
     if image_data_url:
+        finish_schedule, selected_products = await asyncio.gather(
+            analyze_generated_finish_schedule(image_data_url, payload.finish_schedule),
+            analyze_generated_products(image_data_url, payload.grounded_design or existing_design),
+        )
         revision_id = f"revision-{uuid4().hex[:12]}"
         generated_at = datetime.now(UTC).isoformat()
         history = list((existing_design or {}).get("concept_history") or concept_history_with_current(existing_design))
@@ -1259,7 +1779,8 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
             "image_data_url": image_data_url,
             "generated_at": generated_at,
             "source": image_source,
-            "selected_products": selected_product_snapshots(payload.grounded_design or existing_design),
+            "selected_products": selected_products,
+            "finish_schedule": finish_schedule,
             "notes": [
                 "Edited from the current approved design and original room reference."
                 if has_previous_image
@@ -1345,7 +1866,9 @@ def revise_design(design_id: str, payload: ReviseRequest, request: Request) -> D
         "project_name": str(design.get("project_name") or design.get("room_brief", {}).get("room_type", "Room")).replace("_", " ").title(),
     }
     state_store.append_message(session_id, "user", payload.message)
-    if payload.refresh_products:
+    previous_grounded_slots = list(design.get("grounder_output", {}).get("grounded_slots", []))
+    refresh_categories = requested_product_categories(payload.message, previous_grounded_slots)
+    if payload.refresh_products or refresh_categories:
         room_brief = RoomBrief(**design["room_brief"])
         design_slots = design.get("designer_output", {}).get("slots", [])
         if not design_slots:
@@ -1359,7 +1882,13 @@ def revise_design(design_id: str, payload: ReviseRequest, request: Request) -> D
             catalogue_path=CATALOGUE_PATH,
             chroma_path=CHROMA_PATH,
         )
-        design["grounder_output"] = refreshed.model_dump(mode="json")
+        refreshed_output = refreshed.model_dump(mode="json")
+        refreshed_output["grounded_slots"] = synchronize_refreshed_products(
+            previous_grounded_slots,
+            refreshed_output["grounded_slots"],
+            payload.message,
+        )
+        design["grounder_output"] = refreshed_output
         design["critic_verdict"] = critique_design(
             design["room_brief"],
             design["grounder_output"],
@@ -1485,6 +2014,7 @@ def export_design(
             "missing_questions": design["planner_output"].get("missing_questions", []),
         },
         selected_items=selected,
+        finish_schedule=list(exported_image.get("finish_schedule") or []),
         total_price_inr=exported_total,
         budget_summary={
             "budget_inr": budget,

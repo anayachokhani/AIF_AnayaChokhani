@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi.testclient import TestClient
 from pathlib import Path
 import pytest
@@ -221,6 +223,7 @@ def test_all_api_routes_declare_response_models() -> None:
         ("/api/auth/signup", "POST"),
         ("/api/auth/login", "POST"),
         ("/api/auth/me", "GET"),
+        ("/api/auth/profile", "PATCH"),
         ("/api/auth/logout", "POST"),
         ("/api/session", "POST"),
         ("/api/session/{session_id}", "GET"),
@@ -262,9 +265,33 @@ def test_account_signup_login_and_logout_use_server_session_cookie() -> None:
     assert me.status_code == 200
     assert me.json()["user"]["name"] == "Anaya Homeowner"
 
+    profile = client.patch(
+        "/api/auth/profile",
+        json={
+            "name": "Anaya Chokhani",
+            "location": "New York, NY",
+            "home_type": "condo",
+            "preferred_units": "ft",
+        },
+    )
+    assert profile.status_code == 200
+    assert profile.json()["user"] == {
+        "id": signup.json()["user"]["id"],
+        "name": "Anaya Chokhani",
+        "email": "anaya@example.com",
+        "location": "New York, NY",
+        "home_type": "condo",
+        "preferred_units": "ft",
+    }
+    assert client.get("/api/auth/me").json()["user"]["location"] == "New York, NY"
+
     logout = client.post("/api/auth/logout")
     assert logout.status_code == 200
     assert client.get("/api/auth/me").status_code == 401
+    assert client.patch(
+        "/api/auth/profile",
+        json={"name": "No Session", "location": "", "home_type": "house", "preferred_units": "m"},
+    ).status_code == 401
 
     bad_login = client.post("/api/auth/login", json={"email": "anaya@example.com", "password": "wrong-password"})
     assert bad_login.status_code == 401
@@ -278,11 +305,20 @@ def test_account_password_and_session_survive_store_reload(tmp_path) -> None:
     store = FileAuthStore(store_path)
     created = store.create_user("Persistent Homeowner", "persistent@example.com", "a-secure-password")
     token = store.create_session(created["id"])
+    updated = store.update_profile(
+        created["id"],
+        name="Persistent Owner",
+        location="Mumbai, Maharashtra",
+        home_type="house",
+        preferred_units="m",
+    )
 
     reloaded = FileAuthStore(store_path)
 
-    assert reloaded.authenticate("persistent@example.com", "a-secure-password") == created
-    assert reloaded.user_for_token(token) == created
+    assert reloaded.authenticate("persistent@example.com", "a-secure-password") == updated
+    assert reloaded.user_for_token(token) == updated
+    assert updated["location"] == "Mumbai, Maharashtra"
+    assert updated["preferred_units"] == "m"
     assert store_path.stat().st_mode & 0o777 == 0o600
     assert "a-secure-password" not in store_path.read_text(encoding="utf-8")
 
@@ -407,6 +443,41 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
     assert get_response.json()["design"]["design_id"] == design_id
     assert_no_secret_exposure(get_response.json())
 
+    stale = api_main.design_store.get(design_id)
+    stale["critic_verdict"]["fit"] = {"name": "fit", "status": "fail", "notes": ["stale fit result"]}
+    api_main.design_store.save(design_id, stale)
+    refreshed = client.get(f"/api/design/{design_id}")
+    assert refreshed.status_code == 200
+    assert refreshed.json()["design"]["critic_verdict"]["fit"]["status"] == "pass"
+    assert "stale fit result" not in refreshed.json()["design"]["critic_verdict"]["fit"]["notes"]
+
+    stored = api_main.design_store.get(design_id)
+    failed_slot = next(slot for slot in stored["grounder_output"]["grounded_slots"] if slot["selected_item"])
+    failed_slot["selected_item"] = None
+    failed_slot["alternatives"] = []
+    failed_slot["failure"] = {
+        "slot_id": failed_slot["slot"]["slot_id"],
+        "category": failed_slot["slot"]["category"],
+        "code": "retrieval",
+        "blocked_by": "no_catalogue_match",
+        "message": "Stored catalogue match needs retry.",
+        "constraints": failed_slot["constraints"],
+        "query": failed_slot["slot"]["style_text"] or failed_slot["slot"]["category"],
+    }
+    stored["status"] = "failed"
+    api_main.design_store.save(design_id, stored)
+    recovered = client.get(f"/api/design/{design_id}")
+    assert recovered.status_code == 200
+    recovered_design = recovered.json()["design"]
+    recovered_slot = next(
+        slot
+        for slot in recovered_design["grounder_output"]["grounded_slots"]
+        if slot["slot"]["slot_id"] == failed_slot["slot"]["slot_id"]
+    )
+    assert recovered_slot["selected_item"] is not None
+    assert recovered_design["critic_verdict"]["sourceability"]["status"] == "pass"
+    assert recovered_design["status"] == "passed"
+
     export_response = client.get(f"/api/export/{design_id}")
     assert export_response.status_code == 200
     exported = export_response.json()
@@ -415,6 +486,7 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
     assert exported["concept_image_data_url"] is None
     assert exported["source_image_data_url"] is None
     assert exported["selected_items"]
+    assert "finish_schedule" in exported
     assert "Amazon Berkeley Objects" in exported["attribution"]
     assert_no_secret_exposure(exported)
 
@@ -434,6 +506,11 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
     assert revised_fetch.json()["design"]["design_id"] == design_id
     assert revised_fetch.json()["design"]["attempt_log"] == revised["attempt_log"]
 
+    previous_item_ids = [
+        slot["selected_item"]["item_id"]
+        for slot in revised["grounder_output"]["grounded_slots"]
+        if slot["selected_item"]
+    ]
     refresh_response = client.post(
         f"/api/design/{design_id}/revise",
         json={"message": "Refresh furniture matches", "refresh_products": True},
@@ -443,7 +520,28 @@ def test_chat_runs_agent_loop_and_design_fetch_export_and_revise() -> None:
     for grounded_slot in refreshed["grounder_output"]["grounded_slots"]:
         if grounded_slot["selected_item"]:
             assert grounded_slot["selected_item"]["product_type"] == grounded_slot["slot"]["category"]
+    refreshed_item_ids = [
+        slot["selected_item"]["item_id"]
+        for slot in refreshed["grounder_output"]["grounded_slots"]
+        if slot["selected_item"]
+    ]
+    assert refreshed_item_ids != previous_item_ids
     assert "refreshed every furniture match" in refreshed["chat_messages"][-1]["content"]
+
+    target_slot = next(slot for slot in refreshed["grounder_output"]["grounded_slots"] if slot["alternatives"])
+    target_category = target_slot["slot"]["category"]
+    target_item_id = target_slot["selected_item"]["item_id"]
+    automatic_refresh = client.post(
+        f"/api/design/{design_id}/revise",
+        json={"message": f"Make the {target_category.replace('_', ' ')} different"},
+    )
+    assert automatic_refresh.status_code == 200
+    automatic_slot = next(
+        slot
+        for slot in automatic_refresh.json()["design"]["grounder_output"]["grounded_slots"]
+        if slot["slot"]["slot_id"] == target_slot["slot"]["slot_id"]
+    )
+    assert automatic_slot["selected_item"]["item_id"] != target_item_id
 
 
 def test_saved_designs_are_listed_and_survive_store_reload(tmp_path, monkeypatch) -> None:
@@ -689,6 +787,9 @@ def test_concept_image_prompt_is_saved_to_the_design_without_openai_key(monkeypa
             "constraints": ["storage"],
             "questionnaire": {"priority": "storage"},
             "photo_notes": [],
+            "finish_schedule": [
+                {"category": "Wall paint", "colourName": "Mineral White", "hex": "#ECEDE8"},
+            ],
             "vastu_enabled": False,
             "grounded_design": chat_response.json()["design"],
         },
@@ -702,6 +803,20 @@ def test_concept_image_prompt_is_saved_to_the_design_without_openai_key(monkeypa
 
 
 def test_concept_image_calls_openai_and_saves_generated_image(monkeypatch) -> None:
+    async def fake_finish_analysis(image_data_url: str, proposed_schedule: list[dict]) -> list[dict]:
+        assert image_data_url == "data:image/jpeg;base64,abc123"
+        return api_main.merge_observed_finish_schedule(
+            proposed_schedule,
+            [
+                {
+                    "category": "Wall paint",
+                    "colour_name": "Warm Mushroom",
+                    "hex": "#B8A38D",
+                    "visible": True,
+                }
+            ],
+        )
+
     class FakeImageResponse:
         status_code = 200
         text = ""
@@ -726,6 +841,7 @@ def test_concept_image_calls_openai_and_saves_generated_image(monkeypatch) -> No
     calls: list[dict] = []
     monkeypatch.setenv("OPENAI_API_KEY", "server-secret")
     monkeypatch.setattr(api_main.httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr(api_main, "analyze_generated_finish_schedule", fake_finish_analysis)
     client = TestClient(app)
     brief = create_room_brief(room_type="living_room", width=12, depth=14, units="ft", budget_inr=180000)
     api_main.planner_client_override = FakePlannerClient(planner_payload(brief))
@@ -744,6 +860,9 @@ def test_concept_image_calls_openai_and_saves_generated_image(monkeypatch) -> No
             "constraints": [],
             "questionnaire": {},
             "photo_notes": [],
+            "finish_schedule": [
+                {"category": "Wall paint", "colourName": "Mineral White", "hex": "#ECEDE8"},
+            ],
             "vastu_enabled": False,
             "grounded_design": chat_response.json()["design"],
         },
@@ -756,6 +875,9 @@ def test_concept_image_calls_openai_and_saves_generated_image(monkeypatch) -> No
     assert payload["revision_id"].startswith("revision-")
     assert len(payload["concept_history"]) == 1
     assert payload["concept_history"][0]["selected_products"]
+    assert payload["concept_history"][0]["finish_schedule"][0]["colourName"] == "Warm Mushroom"
+    assert payload["concept_history"][0]["finish_schedule"][0]["hex"] == "#B8A38D"
+    assert payload["concept_history"][0]["finish_schedule"][0]["colourSource"] == "generated_image"
     assert calls[0]["url"] == "https://api.openai.com/v1/images/edits"
     assert calls[0]["data"]["model"] == "gpt-image-2"
     assert calls[0]["files"]
@@ -763,7 +885,230 @@ def test_concept_image_calls_openai_and_saves_generated_image(monkeypatch) -> No
     assert "exact" in calls[0]["files"][0][1][0]
     fetched = client.get(f"/api/design/{design_id}").json()["design"]
     assert fetched["concept_image"]["image_data_url"] == "data:image/jpeg;base64,abc123"
+    assert fetched["concept_image"]["finish_schedule"][0]["hex"] == "#B8A38D"
     assert_no_secret_exposure(payload)
+
+
+def test_observed_finish_colours_only_replace_visible_valid_matches() -> None:
+    proposed = [
+        {
+            "category": "Wall paint",
+            "recommendation": "Mineral White washable low-sheen emulsion",
+            "quantity": "10 litres",
+            "colourName": "Mineral White",
+            "hex": "#ECEDE8",
+            "link": "https://example.com/paint",
+        },
+        {
+            "category": "Flooring",
+            "recommendation": "Oak matte wood finish",
+            "quantity": "20 sq m",
+            "colourName": "Oak",
+            "hex": "#A07852",
+        },
+    ]
+
+    merged = api_main.merge_observed_finish_schedule(
+        proposed,
+        [
+            {
+                "category": "Wall paint",
+                "colour_name": "Clay Rose",
+                "hex": "#A96F63",
+                "visible": True,
+                "bounding_box": {"x": 80, "y": 40, "width": 620, "height": 700},
+            },
+            {"category": "Flooring", "colour_name": "Dark Walnut", "hex": "not-a-hex", "visible": True},
+        ],
+    )
+
+    assert merged[0]["colourName"] == "Clay Rose"
+    assert merged[0]["hex"] == "#A96F63"
+    assert merged[0]["recommendation"] == "Clay Rose washable low-sheen emulsion"
+    assert merged[0]["imageCrop"] == {"x": 80, "y": 40, "width": 620, "height": 700}
+    assert merged[0]["quantity"] == "10 litres"
+    assert merged[0]["link"] == "https://example.com/paint"
+    assert merged[1] == proposed[1]
+
+
+def test_finish_colour_analysis_reads_structured_image_response(monkeypatch) -> None:
+    class FakeVisionResponse:
+        status_code = 200
+
+        def json(self) -> dict:
+            return {
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": '{"finishes":[{"category":"Wall paint","colour_name":"Soft Putty","hex":"#C1B5A6","visible":true,"bounding_box":{"x":50,"y":20,"width":700,"height":750}}]}',
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    class FakeVisionClient:
+        def __init__(self, timeout: int) -> None:
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        async def post(self, url: str, headers: dict, **kwargs) -> FakeVisionResponse:
+            calls.append({"url": url, "headers": headers, **kwargs})
+            return FakeVisionResponse()
+
+    calls: list[dict] = []
+    proposed = [
+        {
+            "category": "Wall paint",
+            "recommendation": "White paint",
+            "quantity": "10 litres",
+            "colourName": "White",
+            "hex": "#FFFFFF",
+        }
+    ]
+    monkeypatch.setenv("OPENAI_API_KEY", "server-secret")
+    monkeypatch.setattr(api_main.httpx, "AsyncClient", FakeVisionClient)
+
+    result = asyncio.run(
+        api_main.analyze_generated_finish_schedule("data:image/jpeg;base64,abc123", proposed)
+    )
+
+    assert result[0]["colourName"] == "Soft Putty"
+    assert result[0]["hex"] == "#C1B5A6"
+    assert result[0]["imageCrop"] == {"x": 50, "y": 20, "width": 700, "height": 750}
+    assert calls[0]["url"] == "https://api.openai.com/v1/responses"
+    assert calls[0]["json"]["store"] is False
+    assert calls[0]["json"]["input"][0]["content"][1]["type"] == "input_image"
+    assert calls[0]["json"]["text"]["format"]["type"] == "json_schema"
+    required = calls[0]["json"]["text"]["format"]["schema"]["properties"]["finishes"]["items"]["required"]
+    assert "bounding_box" in required
+
+
+def test_generated_product_reconciliation_uses_visible_catalogue_match() -> None:
+    design = {
+        "grounder_output": {
+            "grounded_slots": [
+                {
+                    "slot": {"category": "sofa"},
+                    "placement_zone": "SW",
+                    "selected_item": {"item_id": "sofa-a", "title": "Grey sofa", "price_inr": 40000},
+                    "alternatives": [{"item_id": "sofa-b", "title": "Olive sofa", "price_inr": 43000}],
+                },
+                {
+                    "slot": {"category": "lamp"},
+                    "placement_zone": "SE",
+                    "selected_item": {"item_id": "lamp-a", "title": "Floor lamp", "price_inr": 5000},
+                    "alternatives": [],
+                },
+            ]
+        }
+    }
+    candidates = [
+        {"category": "sofa", "placement_zone": "SW", "item": {"item_id": "sofa-a", "title": "Grey sofa"}},
+        {"category": "sofa", "placement_zone": "SW", "item": {"item_id": "sofa-b", "title": "Olive sofa"}},
+        {"category": "lamp", "placement_zone": "SE", "item": {"item_id": "lamp-a", "title": "Floor lamp"}},
+    ]
+
+    reconciled = api_main.reconcile_generated_products(
+        design,
+        candidates,
+        [
+            {"category": "sofa", "item_id": "sofa-b", "visible": True, "confidence": 0.86},
+            {"category": "lamp", "item_id": "lamp-a", "visible": False, "confidence": 0.2},
+        ],
+    )
+
+    assert reconciled[0]["item_id"] == "sofa-b"
+    assert reconciled[0]["imageMatch"] == "closest_catalogue_match"
+    assert reconciled[0]["matchConfidence"] == 0.86
+    assert reconciled[0]["placement_zone"] == "SW"
+    assert reconciled[1]["item_id"] == "lamp-a"
+    assert reconciled[1]["imageMatch"] == "not_visible"
+
+
+def test_generated_product_analysis_compares_render_with_candidate_images(monkeypatch) -> None:
+    class FakeProductResponse:
+        status_code = 200
+
+        def json(self) -> dict:
+            return {
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": '{"products":[{"category":"sofa","item_id":"sofa-b","visible":true,"confidence":0.91}]}',
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    class FakeProductClient:
+        def __init__(self, timeout: int) -> None:
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        async def post(self, url: str, headers: dict, **kwargs) -> FakeProductResponse:
+            calls.append({"url": url, "headers": headers, **kwargs})
+            return FakeProductResponse()
+
+    design = {
+        "grounder_output": {
+            "grounded_slots": [
+                {
+                    "slot": {"category": "sofa"},
+                    "placement_zone": "SW",
+                    "selected_item": {"item_id": "sofa-a", "title": "Grey sofa"},
+                    "alternatives": [{"item_id": "sofa-b", "title": "Olive sofa"}],
+                }
+            ]
+        }
+    }
+    candidates = [
+        {
+            "category": "sofa",
+            "placement_zone": "SW",
+            "item": {"item_id": "sofa-a", "title": "Grey sofa"},
+            "image_data_url": "data:image/jpeg;base64,YQ==",
+        },
+        {
+            "category": "sofa",
+            "placement_zone": "SW",
+            "item": {"item_id": "sofa-b", "title": "Olive sofa"},
+            "image_data_url": "data:image/jpeg;base64,Yg==",
+        },
+    ]
+    calls: list[dict] = []
+    monkeypatch.setenv("OPENAI_API_KEY", "server-secret")
+    monkeypatch.setattr(api_main, "product_match_candidates", lambda _design: candidates)
+    monkeypatch.setattr(api_main.httpx, "AsyncClient", FakeProductClient)
+
+    result = asyncio.run(api_main.analyze_generated_products("data:image/jpeg;base64,cm9vbQ==", design))
+
+    assert result[0]["item_id"] == "sofa-b"
+    assert result[0]["imageMatch"] == "closest_catalogue_match"
+    assert calls[0]["url"] == "https://api.openai.com/v1/responses"
+    content = calls[0]["json"]["input"][0]["content"]
+    assert content[1]["image_url"] == "data:image/jpeg;base64,cm9vbQ=="
+    assert [part["image_url"] for part in content if part["type"] == "input_image"][1:] == [
+        "data:image/jpeg;base64,YQ==",
+        "data:image/jpeg;base64,Yg==",
+    ]
 
 
 def test_concept_image_edits_uploaded_room_photo(monkeypatch) -> None:
@@ -890,6 +1235,9 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
                 "colour_palette": "Modern: Porcelain #E9E5DC, Walnut #76523B, Olive #6F765A, Charcoal #333734, Burnt Rust #B85C3E",
                 "colour_distribution": "Show at least four palette colours.",
             },
+            "finish_schedule": [
+                {"category": "Wall paint", "colourName": "Olive", "hex": "#6F765A"},
+            ],
             "grounded_design": revised,
         },
     )
@@ -898,10 +1246,15 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
     assert calls[0]["url"] == "https://api.openai.com/v1/images/edits"
     assert calls[0]["files"][0][1][1] == b"world"
     assert calls[0]["files"][1][1][1] == b"hello"
-    assert len(calls[0]["files"]) == 2
+    expected_product_references = min(
+        10,
+        len(revised["grounder_output"]["grounded_slots"]),
+    )
+    assert len(calls[0]["files"]) == 2 + expected_product_references
     assert "input_fidelity" not in calls[0]["data"]
     assert "Make the curtains olive and change nothing else" in calls[0]["data"]["prompt"]
     assert "Create a visibly different design alternative" in calls[0]["data"]["prompt"]
+    assert "every exact approved catalogue product" in calls[0]["data"]["prompt"]
     assert "Show at least four palette colours" in calls[0]["data"]["prompt"]
     fetched = client.get(f"/api/design/{created['design_id']}").json()["design"]
     assert fetched["source_images"] == ["data:image/jpeg;base64,aGVsbG8="]
@@ -911,6 +1264,7 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
     assert fetched["concept_history"][1]["revision_text"] == "Make the curtains olive and change nothing else."
     assert fetched["concept_history"][1]["base_revision_id"] == base_revision_id
     assert fetched["concept_history"][1]["selected_products"]
+    assert fetched["concept_history"][1]["finish_schedule"][0]["hex"] == "#6F765A"
 
     original_export = client.get(
         f"/api/export/{created['design_id']}",
@@ -931,6 +1285,7 @@ def test_revision_reuses_saved_room_and_current_design_without_replanning(monkey
     assert revised_export.json()["revision_id"] == revised_revision_id
     assert revised_export.json()["revision_label"] == "Version 2"
     assert revised_export.json()["concept_image_data_url"] == "data:image/jpeg;base64,cmV2aXNlZA=="
+    assert revised_export.json()["finish_schedule"][0]["hex"] == "#6F765A"
     assert client.get(
         f"/api/export/{created['design_id']}",
         params={"revision_id": "revision-not-in-project"},
@@ -984,6 +1339,11 @@ def test_retry_exhaustion_returns_stable_error_with_attempt_log() -> None:
     assert body["message"] == "agent retry cap exhausted"
     assert body["design"]["status"] == "failed"
     assert body["design"]["attempt_log"]
+    assert any(slot.get("selected_item") is None for slot in body["design"]["grounder_output"]["grounded_slots"])
+    project_list = client.get("/api/designs")
+    assert project_list.status_code == 200
+    failed_summary = next(design for design in project_list.json()["designs"] if design["design_id"] == body["design"]["design_id"])
+    assert failed_summary["status"] == "failed"
     assert_no_secret_exposure(body)
 
 
