@@ -90,6 +90,7 @@ class OpenRouterPlannerClient:
         self.model = model
         self.timeout = timeout
         if not self.api_key:
+            print("hiiiii")
             raise RuntimeError("missing_api_key")
 
     def complete(self, messages: list[dict[str, str]]) -> str:

@@ -16,6 +16,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+from pprint import pprint
+import rich
 
 import httpx
 from dotenv import load_dotenv
@@ -1065,8 +1067,8 @@ def product_image_references(
             )
         ]
     slots.sort(
-        key=lambda slot: 0
-        if any(
+        key=lambda slot: 
+        0 if any(
             value and str(value).lower() in normalized_revision
             for value in [
                 slot.get("slot", {}).get("category"),
@@ -1096,6 +1098,7 @@ def product_image_references(
         references.append((label, f"data:{mime_type};base64,{encoded}"))
         if len(references) >= limit:
             break
+    print(references)
     return references
 
 
@@ -1476,9 +1479,12 @@ async def analyze_generated_products(
 
 
 def run_design_for_session(session_id: str, max_retries: int, design_id: str | None = None) -> dict[str, Any]:
+    print("Hii 1")
     state = state_store.get(session_id)
+    print("Hii 2")
     if state is None or state.brief is None:
         raise typed_error(404, "not_found", "session not found")
+    print("Hii 3")
     try:
         result = run_agent_loop(
             state.brief,
@@ -1487,6 +1493,8 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
             chroma_path=CHROMA_PATH,
             max_retries=max_retries,
         )
+        print("Hii 4")
+        print("Hiiiiiiiiiiiiiiiiiiiiii")
     except RuntimeError as exc:
         if str(exc) == "missing_api_key":
             raise typed_error(503, "missing_api_key", "planner API key is not configured on the backend") from exc
@@ -1494,14 +1502,21 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     except HTTPException:
         raise
     except Exception as exc:
+        print(f"Exception: {exc}")
         raise typed_error(500, "graph_failure", "agent graph failed", error=exc.__class__.__name__) from exc
 
     resolved_design_id = design_id or f"design-{uuid4().hex[:12]}"
     payload = serializable_design(resolved_design_id, session_id, state.brief, result)
     design_store.save(resolved_design_id, payload)
     state.attempt_log = payload["attempt_log"]
+    rich.print(result)
     if result.status == "failed":
+        print("XXXXXX")
         raise typed_error(409, "retry_exhausted", "agent retry cap exhausted", design=payload)
+    else:
+        print("!!!!!!")
+        print(f"Design {resolved_design_id} completed successfully for session {session_id}.")
+
     return payload
 
 
@@ -1599,6 +1614,7 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
     if state is None:
         raise typed_error(404, "not_found", "session not found")
     state_store.append_message(payload.session_id, "user", payload.message)
+    print("************")
     design = run_design_for_session(payload.session_id, payload.max_retries)
     state_store.append_message(payload.session_id, "assistant", f"Design {design['design_id']} completed.")
     design["chat_messages"] = list(state_store.get(payload.session_id).messages)
@@ -1735,7 +1751,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
         references.append(("selected saved design version; primary pixel-level edit target", str(previous_image)))
     if source_images:
         references.append(("original room photo; architecture and camera source of truth", source_images[0]))
-    remaining_reference_slots = max(0, 12 - len(references))
+    remaining_reference_slots = max(0, 12 - len(references))    # ...
     references.extend(
         product_image_references(
             payload.grounded_design or existing_design,

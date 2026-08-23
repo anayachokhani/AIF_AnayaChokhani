@@ -675,6 +675,12 @@ export function WorkspaceClient() {
       };
     })
     : slots;
+
+  console.log(conceptHistory);
+  console.log(selectedRevision);
+  console.log(slots);
+  console.log(displayedSlots);
+
   const visibleTotal = displayedSlots.reduce((sum, slot) => sum + (slot.selected_item?.price_inr ?? 0), 0);
   const backendTotal = selectedRevision?.selected_products?.length ? visibleTotal : design?.critic_verdict.total_price_inr ?? 0;
   const exactTotal = design ? visibleTotal === backendTotal : false;

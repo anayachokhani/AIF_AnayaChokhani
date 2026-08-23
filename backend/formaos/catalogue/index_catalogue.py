@@ -150,8 +150,12 @@ def search_items(
     chroma_path: Path = Path("data/vectorstores/chroma"),
 ) -> list[dict[str, object]]:
     client = client_for(chroma_path)
-    collection = client.get_collection(COLLECTION_NAME, embedding_function=HashingEmbeddingFunction())
-    candidate_count = min(collection.count(), max(SEMANTIC_CANDIDATE_LIMIT, k * 8, k))
+    # collection = client.get_collection(COLLECTION_NAME, embedding_function=HashingEmbeddingFunction())
+    collection = client.get_or_create_collection(COLLECTION_NAME, embedding_function=HashingEmbeddingFunction())
+    count = collection.count()
+    if count == 0 or k <= 0:
+        return []
+    candidate_count = min(count, max(SEMANTIC_CANDIDATE_LIMIT, k * 8, k))
     results = collection.query(query_texts=[query], n_results=candidate_count)
     metadatas = results.get("metadatas", [[]])[0]
     distances = results.get("distances", [[]])[0]
