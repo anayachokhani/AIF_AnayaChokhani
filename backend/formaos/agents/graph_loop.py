@@ -6,6 +6,8 @@ from typing import Any, Literal, TypedDict
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
+import rich
+
 from formaos.agents.critic import CriticVerdict, critique_design
 from formaos.agents.designer import DEFAULT_CATALOGUE_PATH, DesignerOutput, design_slots
 from formaos.agents.grounder import DEFAULT_CHROMA_PATH, GrounderOutput, ground_design
@@ -192,6 +194,7 @@ def run_agent_loop(
             "max_retries": max_retries,
         }
     )
+    rich.print(state)
     status = state.get("final_status", "failed")
     return AgentLoopResult(
         status=status,

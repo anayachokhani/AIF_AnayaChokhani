@@ -219,6 +219,7 @@ function apiUrl(path: string) {
 }
 
 function apiFetch(path: string, init?: RequestInit) {
+  console.trace("Debugging checkpoint");
   return fetch(apiUrl(path), { ...init, credentials: "include" });
 }
 
@@ -867,6 +868,70 @@ export function WorkspaceClient() {
     }
   }
 
+  async function createNewSession() {
+    setLoading(true);
+    setError("");
+    setDesign(null);
+    setConceptImage(null);
+    setSelectedRevisionId("");
+    setProgress("planning");
+    const projectId = currentProjectId;
+    const firstMessage = [
+      designGoal,
+      `Dimensions: ${dimensionsLabel}.`,
+      `Style: ${selectedStyles.join(", ")}.`,
+      `Preferences: ${selectedPreferences.join(", ")}.`,
+      `Photo notes: ${photoNotes.join("; ") || "no photos uploaded"}.`,
+      message,
+    ].join(" ");
+    updateProjectChat(projectId, () => [
+      newChatMessage("user", firstMessage),
+      newChatMessage("assistant", "I am checking dimensions, budget, style, catalogue items, and room constraints for this project."),
+    ]);
+    try {
+      const sessionResponse = await apiFetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief: roomBrief, user_id: homeowner?.id, project_id: projectId, project_name: projectName }),
+      });
+      console.log("sessionResponse");
+      console.log(sessionResponse);
+      const sessionPayload = await parseResponse(sessionResponse);
+      setSessionId(sessionPayload.session_id);
+
+      setProgress("designing");
+      const chatResponse = await apiFetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionPayload.session_id,
+          message: firstMessage,
+          max_retries: 2,
+        }),
+      });
+      setProgress("grounding");
+      const chatPayload = await parseResponse(chatResponse);
+      setProgress("checking");
+      setDesign(chatPayload.design);
+      await refreshSavedDesigns().catch(() => undefined);
+      setProgress(chatPayload.design?.status === "failed" ? "failed" : "passed");
+      appendProjectMessage(projectId, "assistant", "The sourceable plan is ready. I am generating the final room image now.");
+      const imagePayload = await generateConcept(chatPayload.design);
+      appendProjectMessage(projectId, "assistant", imagePayload?.mode === "generated" ? "The generated room image is ready." : "The image prompt is ready, but the backend image key is not configured.");
+      setActiveTab(vastuEnabled ? "vastu" : "shopping");
+      await refreshSavedDesigns();
+    } catch (caught) {
+      if (caught instanceof ApiRequestError && caught.design) {
+        setDesign(caught.design);
+        await refreshSavedDesigns().catch(() => undefined);
+      }
+      setProgress("error");
+      setError(caught instanceof Error ? caught.message : "general error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function generateConcept(
     sourceDesign = design,
     revisionText = "",
@@ -1012,65 +1077,68 @@ export function WorkspaceClient() {
       );
       return;
     }
-    setLoading(true);
-    setError("");
-    setDesign(null);
-    setConceptImage(null);
-    setSelectedRevisionId("");
-    setProgress("planning");
-    const projectId = currentProjectId;
-    const firstMessage = [
-      designGoal,
-      `Dimensions: ${dimensionsLabel}.`,
-      `Style: ${selectedStyles.join(", ")}.`,
-      `Preferences: ${selectedPreferences.join(", ")}.`,
-      `Photo notes: ${photoNotes.join("; ") || "no photos uploaded"}.`,
-      message,
-    ].join(" ");
-    updateProjectChat(projectId, () => [
-      newChatMessage("user", firstMessage),
-      newChatMessage("assistant", "I am checking dimensions, budget, style, catalogue items, and room constraints for this project."),
-    ]);
-    try {
-      const sessionResponse = await apiFetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief: roomBrief, user_id: homeowner.id, project_id: projectId, project_name: projectName }),
-      });
-      const sessionPayload = await parseResponse(sessionResponse);
-      setSessionId(sessionPayload.session_id);
+    createNewSession();
+    // setLoading(true);
+    // setError("");
+    // setDesign(null);
+    // setConceptImage(null);
+    // setSelectedRevisionId("");
+    // setProgress("planning");
+    // const projectId = currentProjectId;
+    // const firstMessage = [
+    //   designGoal,
+    //   `Dimensions: ${dimensionsLabel}.`,
+    //   `Style: ${selectedStyles.join(", ")}.`,
+    //   `Preferences: ${selectedPreferences.join(", ")}.`,
+    //   `Photo notes: ${photoNotes.join("; ") || "no photos uploaded"}.`,
+    //   message,
+    // ].join(" ");
+    // updateProjectChat(projectId, () => [
+    //   newChatMessage("user", firstMessage),
+    //   newChatMessage("assistant", "I am checking dimensions, budget, style, catalogue items, and room constraints for this project."),
+    // ]);
+    // try {
+    //   const sessionResponse = await apiFetch("/api/session", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ brief: roomBrief, user_id: homeowner.id, project_id: projectId, project_name: projectName }),
+    //   });
+    //   console.log("sessionResponse");
+    //   console.log(sessionResponse);
+    //   const sessionPayload = await parseResponse(sessionResponse);
+    //   setSessionId(sessionPayload.session_id);
 
-      setProgress("designing");
-      const chatResponse = await apiFetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionPayload.session_id,
-          message: firstMessage,
-          max_retries: 2,
-        }),
-      });
-      setProgress("grounding");
-      const chatPayload = await parseResponse(chatResponse);
-      setProgress("checking");
-      setDesign(chatPayload.design);
-      await refreshSavedDesigns().catch(() => undefined);
-      setProgress(chatPayload.design?.status === "failed" ? "failed" : "passed");
-      appendProjectMessage(projectId, "assistant", "The sourceable plan is ready. I am generating the final room image now.");
-      const imagePayload = await generateConcept(chatPayload.design);
-      appendProjectMessage(projectId, "assistant", imagePayload?.mode === "generated" ? "The generated room image is ready." : "The image prompt is ready, but the backend image key is not configured.");
-      setActiveTab(vastuEnabled ? "vastu" : "shopping");
-      await refreshSavedDesigns();
-    } catch (caught) {
-      if (caught instanceof ApiRequestError && caught.design) {
-        setDesign(caught.design);
-        await refreshSavedDesigns().catch(() => undefined);
-      }
-      setProgress("error");
-      setError(caught instanceof Error ? caught.message : "general error");
-    } finally {
-      setLoading(false);
-    }
+    //   setProgress("designing");
+    //   const chatResponse = await apiFetch("/api/chat", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       session_id: sessionPayload.session_id,
+    //       message: firstMessage,
+    //       max_retries: 2,
+    //     }),
+    //   });
+    //   setProgress("grounding");
+    //   const chatPayload = await parseResponse(chatResponse);
+    //   setProgress("checking");
+    //   setDesign(chatPayload.design);
+    //   await refreshSavedDesigns().catch(() => undefined);
+    //   setProgress(chatPayload.design?.status === "failed" ? "failed" : "passed");
+    //   appendProjectMessage(projectId, "assistant", "The sourceable plan is ready. I am generating the final room image now.");
+    //   const imagePayload = await generateConcept(chatPayload.design);
+    //   appendProjectMessage(projectId, "assistant", imagePayload?.mode === "generated" ? "The generated room image is ready." : "The image prompt is ready, but the backend image key is not configured.");
+    //   setActiveTab(vastuEnabled ? "vastu" : "shopping");
+    //   await refreshSavedDesigns();
+    // } catch (caught) {
+    //   if (caught instanceof ApiRequestError && caught.design) {
+    //     setDesign(caught.design);
+    //     await refreshSavedDesigns().catch(() => undefined);
+    //   }
+    //   setProgress("error");
+    //   setError(caught instanceof Error ? caught.message : "general error");
+    // } finally {
+    //   setLoading(false);
+    // }
   }
 
   async function reviseDesign(

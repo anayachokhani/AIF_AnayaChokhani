@@ -1048,57 +1048,144 @@ def product_image_references(
     matched_only: bool = False,
 ) -> list[tuple[str, str]]:
     references: list[tuple[str, str]] = []
+
+    print("\n=== product_image_references DEBUG ===")
+    print(f"design is None: {design is None}")
+    print(f"limit: {limit}")
+    print(f"revision_text: {revision_text!r}")
+    print(f"matched_only: {matched_only}")
+
     if not design or limit <= 0:
+        print("EARLY RETURN: no design or limit <= 0")
         return references
-    slots = list(design.get("grounder_output", {}).get("grounded_slots", []))
+
+    grounder_output = design.get("grounder_output", {})
+    print(f"grounder_output type: {type(grounder_output)}")
+    print(f"grounder_output keys: {list(grounder_output.keys()) if isinstance(grounder_output, dict) else 'N/A'}")
+
+    slots = list(grounder_output.get("grounded_slots", []))
+    print(f"Initial slot count: {len(slots)}")
+
+    for i, slot in enumerate(slots):
+        print(f"\n--- SLOT {i} ---")
+        print(f"slot: {slot}")
+        print(f"slot.category: {slot.get('slot', {}).get('category')}")
+        print(f"selected_item: {slot.get('selected_item')}")
+
     normalized_revision = revision_text.lower()
-    refresh_all = any(phrase in normalized_revision for phrase in ["refresh furniture", "every furniture", "all furniture", "catalogue list"])
-    if matched_only and not refresh_all:
-        slots = [
-            slot
-            for slot in slots
-            if any(
-                value and str(value).lower() in normalized_revision
-                for value in [
-                    slot.get("slot", {}).get("category"),
-                    (slot.get("selected_item") or {}).get("item_id"),
-                    (slot.get("selected_item") or {}).get("title"),
-                ]
-            )
+    refresh_all = any(
+        phrase in normalized_revision
+        for phrase in [
+            "refresh furniture",
+            "every furniture",
+            "all furniture",
+            "catalogue list",
         ]
-    slots.sort(
-        key=lambda slot: 
-        0 if any(
-            value and str(value).lower() in normalized_revision
-            for value in [
+    )
+
+    print(f"\nnormalized_revision: {normalized_revision!r}")
+    print(f"refresh_all: {refresh_all}")
+
+    if matched_only and not refresh_all:
+        before_count = len(slots)
+
+        filtered_slots = []
+        for slot in slots:
+            values = [
                 slot.get("slot", {}).get("category"),
                 (slot.get("selected_item") or {}).get("item_id"),
                 (slot.get("selected_item") or {}).get("title"),
             ]
+
+            matched = any(
+                value and str(value).lower() in normalized_revision
+                for value in values
+            )
+
+            print(f"MATCH CHECK: values={values!r}, matched={matched}")
+
+            if matched:
+                filtered_slots.append(slot)
+
+        slots = filtered_slots
+
+        print(
+            f"After matched_only filtering: "
+            f"{len(slots)}/{before_count} slots remain"
         )
-        else 1
-    )
-    for slot in slots:
+
+    # ... existing sort ...
+
+    for i, slot in enumerate(slots):
+        # print(f"\n=== PROCESSING SLOT {i} ===")
+
         item = slot.get("selected_item") or {}
-        image_path = str(item.get("image_path") or "").lstrip("/")
+
+        # print(f"item: {item}")
+
+        raw_image_path = item.get("image_path")
+        image_path = str(raw_image_path or "").lstrip("/")
+
+        # print(f"raw image_path: {raw_image_path!r}")
+        # print(f"normalized image_path: {image_path!r}")
+        # print(f"starts with product-images/: {image_path.startswith('product-images/')}")
+
         if not image_path.startswith("product-images/"):
+            # print("SKIP: image path does not start with product-images/")
             continue
+
         local_path = Path("public") / image_path
+
+        # print(f"local_path: {local_path}")
+        # print(f"absolute local_path: {local_path.resolve()}")
+        # print(f"exists: {local_path.exists()}")
+        # print(f"is_file: {local_path.is_file()}")
+
         try:
             image_bytes = local_path.read_bytes()
-        except OSError:
+            # print(f"READ SUCCESS: {len(image_bytes)} bytes")
+        except OSError as exc:
+            # print(f"READ FAILED: {type(exc).__name__}: {exc}")
             continue
+
         suffix = local_path.suffix.lower()
-        mime_type = "image/png" if suffix == ".png" else "image/webp" if suffix == ".webp" else "image/jpeg"
+        # print(f"suffix: {suffix}")
+
+        mime_type = (
+            "image/png"
+            if suffix == ".png"
+            else "image/webp"
+            if suffix == ".webp"
+            else "image/jpeg"
+        )
+
         encoded = base64.b64encode(image_bytes).decode("ascii")
+
         label = clean_prompt_part(
-            f"exact {slot.get('slot', {}).get('category', 'product')} product {item.get('item_id', '')}: "
+            f"exact {slot.get('slot', {}).get('category', 'product')} "
+            f"product {item.get('item_id', '')}: "
             f"{item.get('title', item.get('item_id', 'catalogue item'))}"
         )
-        references.append((label, f"data:{mime_type};base64,{encoded}"))
+
+        # print(f"label: {label!r}")
+        # print(f"mime_type: {mime_type}")
+        # print(f"encoded length: {len(encoded)}")
+
+        references.append(
+            (label, f"data:{mime_type};base64,{encoded}")
+        )
+
+        # print(f"REFERENCE APPENDED. Count is now {len(references)}")
+
         if len(references) >= limit:
+            # print(f"LIMIT REACHED: {limit}")
             break
-    print(references)
+
+    # print("\n=== FINAL DEBUG ===")
+    # print(f"Final reference count: {len(references)}")
+    # print(f"Reference labels: {[r[0] for r in references]}")
+    # print("=== END DEBUG ===\n")
+
     return references
 
 
@@ -1509,7 +1596,8 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     payload = serializable_design(resolved_design_id, session_id, state.brief, result)
     design_store.save(resolved_design_id, payload)
     state.attempt_log = payload["attempt_log"]
-    rich.print(result)
+    # rich.print(result)
+
     if result.status == "failed":
         print("XXXXXX")
         raise typed_error(409, "retry_exhausted", "agent retry cap exhausted", design=payload)
@@ -1609,16 +1697,22 @@ def get_session(session_id: str, request: Request) -> SessionResponse:
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest, request: Request) -> ChatResponse:
+    print("Debug: chat called with payload:", payload)
+    print("Debug: 1")
     assert_session_owner(payload.session_id, request_user(request))
     state = state_store.get(payload.session_id)
+    print("Debug: 2")
     if state is None:
         raise typed_error(404, "not_found", "session not found")
     state_store.append_message(payload.session_id, "user", payload.message)
-    print("************")
+    print("Debug: 3")
     design = run_design_for_session(payload.session_id, payload.max_retries)
+    print("Debug: 4")
     state_store.append_message(payload.session_id, "assistant", f"Design {design['design_id']} completed.")
+    print("Debug: 5")
     design["chat_messages"] = list(state_store.get(payload.session_id).messages)
     design_store.save(str(design["design_id"]), design)
+    print("************")
     return ChatResponse(state="passed", design=design)
 
 
@@ -1714,9 +1808,13 @@ def get_design(design_id: str, request: Request) -> DesignResponse:
 
 @app.post("/api/concept-image", response_model=ConceptImageResponse)
 async def create_concept_image(payload: ConceptImageRequest, request: Request) -> ConceptImageResponse:
+    print("Debug: create_concept_image called with payload:", payload)
     existing_design: dict[str, Any] | None = None
     if payload.design_id:
         existing_design = design_store.get(payload.design_id)
+        print("===== Existing Design =====")
+        print(existing_design)
+        print("===== Existing Design =====")
         if existing_design:
             assert_design_owner(existing_design, request_user(request))
             existing_design = dict(existing_design)
@@ -1736,7 +1834,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
     history = list((existing_design or {}).get("concept_history") or [])
     base_revision = next(
         (entry for entry in history if entry.get("revision_id") == payload.base_revision_id),
-        None,
+        None
     )
     if payload.base_revision_id and base_revision is None:
         raise typed_error(422, "invalid_revision", "selected design version was not found")
@@ -1752,6 +1850,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
     if source_images:
         references.append(("original room photo; architecture and camera source of truth", source_images[0]))
     remaining_reference_slots = max(0, 12 - len(references))    # ...
+    print(f"Remaining reference slots: {remaining_reference_slots}")
     references.extend(
         product_image_references(
             payload.grounded_design or existing_design,
