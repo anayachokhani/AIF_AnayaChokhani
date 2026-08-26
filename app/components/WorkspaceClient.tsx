@@ -868,7 +868,7 @@ export function WorkspaceClient() {
     }
   }
 
-  async function createNewSession() {
+  async function createNewSessionAndSendMessage() {
     setLoading(true);
     setError("");
     setDesign(null);
@@ -1087,7 +1087,7 @@ export function WorkspaceClient() {
       );
       return;
     }
-    createNewSession();
+    createNewSessionAndSendMessage();
     // setLoading(true);
     // setError("");
     // setDesign(null);
