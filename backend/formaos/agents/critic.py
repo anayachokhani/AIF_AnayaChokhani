@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError
+import rich
 
 from formaos.agents.grounder import DEFAULT_CATALOGUE_PATH, GrounderOutput
 from formaos.contracts import CatalogueItem, CheckStatus, RoomBrief
@@ -134,6 +135,10 @@ def critique_design(
     sourceability = check_sourceability(valid_grounded, catalogue_ids)
     vastu, vastu_result = check_vastu_if_requested(valid_brief, items)
     checks = [fit, budget, sourceability, vastu]
+    print("===== Debug Critic Checks =====")
+    # rich.print(checks)
+    rich.print([(check.name, check.status) for check in checks])
+    print("===== Debug Critic Checks =====")
     passed = all(check.status in {CheckStatus.PASS, CheckStatus.WARN, CheckStatus.SKIPPED} for check in checks)
     repair_notes = [note for check in checks for note in check.notes if check.status in {CheckStatus.FAIL, CheckStatus.WARN}]
     return CriticVerdict(

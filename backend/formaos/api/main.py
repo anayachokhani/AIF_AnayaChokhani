@@ -1596,11 +1596,16 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     payload = serializable_design(resolved_design_id, session_id, state.brief, result)
     design_store.save(resolved_design_id, payload)
     state.attempt_log = payload["attempt_log"]
+
+    # print("*********** DEBUG RESULT ***********")
     # rich.print(result)
+    # print("*********** DEBUG RESULT ***********")
+
+    print("Come here")
 
     if result.status == "failed":
-        print("XXXXXX")
-        raise typed_error(409, "retry_exhausted", "agent retry cap exhausted", design=payload)
+        print(f"Design {resolved_design_id} for session {session_id} has some flaws.")
+        # raise typed_error(409, "retry_exhausted", "agent retry cap exhausted", design=payload)
     else:
         print("!!!!!!")
         print(f"Design {resolved_design_id} completed successfully for session {session_id}.")
@@ -1706,6 +1711,7 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         raise typed_error(404, "not_found", "session not found")
     state_store.append_message(payload.session_id, "user", payload.message)
     print("Debug: 3")
+    # return None ########
     design = run_design_for_session(payload.session_id, payload.max_retries)
     print("Debug: 4")
     state_store.append_message(payload.session_id, "assistant", f"Design {design['design_id']} completed.")

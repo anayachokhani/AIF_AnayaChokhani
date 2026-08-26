@@ -111,11 +111,13 @@ def build_agent_graph(
         }
 
     def critic_node(state: AgentLoopState) -> dict[str, Any]:
+        print("\n\nCritiquing Design")
         verdict = critique_design(
             state["brief"],
             state["grounder_output"],
             catalogue_path=catalogue_path,
         )
+        print("Design Critiqued\n\n")
         attempt = state.get("retries_used", 0)
         status: ResponseState = "passed" if verdict.passed else "failed"
         final_status: LoopStatus | None = None
@@ -186,6 +188,7 @@ def run_agent_loop(
         chroma_path=chroma_path,
         include_concept_prompt=include_concept_prompt,
     )
+
     state = compiled.invoke(
         {
             "brief": brief,
@@ -194,7 +197,11 @@ def run_agent_loop(
             "max_retries": max_retries,
         }
     )
+
+    print("===== Debug Agent Loop State =====")
     rich.print(state)
+    print("===== Debug Agent Loop State =====")
+
     status = state.get("final_status", "failed")
     return AgentLoopResult(
         status=status,

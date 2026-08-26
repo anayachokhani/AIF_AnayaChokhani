@@ -898,8 +898,11 @@ export function WorkspaceClient() {
       console.log(sessionResponse);
       const sessionPayload = await parseResponse(sessionResponse);
       setSessionId(sessionPayload.session_id);
-
       setProgress("designing");
+
+      console.log("sessionPayload");
+      console.log(sessionPayload);
+      
       const chatResponse = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -909,10 +912,17 @@ export function WorkspaceClient() {
           max_retries: 2,
         }),
       });
+      
       setProgress("grounding");
       const chatPayload = await parseResponse(chatResponse);
+
+      console.log("chatPayload");
+      console.log(chatPayload);
+
       setProgress("checking");
       setDesign(chatPayload.design);
+
+
       await refreshSavedDesigns().catch(() => undefined);
       setProgress(chatPayload.design?.status === "failed" ? "failed" : "passed");
       appendProjectMessage(projectId, "assistant", "The sourceable plan is ready. I am generating the final room image now.");
