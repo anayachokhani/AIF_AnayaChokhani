@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import rich
 from pathlib import Path
 from typing import Any, Literal
 
@@ -178,6 +179,10 @@ def catalogue_item_from_metadata(metadata: dict[str, Any], placement_zone: Direc
 
 def load_catalogue_rows(catalogue_path: Path) -> list[dict[str, str]]:
     with catalogue_path.open(newline="", encoding="utf-8") as handle:
+        # print("====== DEBUG CATALOGUE PATH ======")
+        # rich.print(catalogue_path)
+        # rich.print(list(csv.DictReader(handle)))
+        # print("====== DEBUG CATALOGUE PATH ======")
         return list(csv.DictReader(handle))
 
 
@@ -245,7 +250,10 @@ def ground_slot(
     except PlacementZoneError as exc:
         raise GrounderValidationError("Grounder received invalid placement hint.", original_error=exc) from exc
     try:
+        rich.print("============= Debug Slot Constraint =============")
         constraints = compute_slot_limits(brief, slot)
+        rich.print(constraints)
+        rich.print("============= Debug Slot Constraint =============")
     except KeyError as exc:
         raise GrounderValidationError("Grounder received invalid placement hint.", original_error=exc) from exc
     query = slot_query(slot)
@@ -300,6 +308,7 @@ def ground_design(
     grounded_slots = [
         ground_slot(valid_brief, slot, chroma_path=chroma_path, catalogue_path=catalogue_path) for slot in valid_slots
     ]
+    
     try:
         return GrounderOutput(grounded_slots=grounded_slots)
     except (ValidationError, ValueError) as exc:

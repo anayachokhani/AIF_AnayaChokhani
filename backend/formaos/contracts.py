@@ -43,6 +43,7 @@ class RoomBrief(BaseModel):
     main_door_direction: Direction | None = None
     compass_direction: Direction | None = None
 
+    #### Need to change this and the UI for selecting this
     @model_validator(mode="after")
     def dimensions_are_reasonable(self) -> "RoomBrief":
         if self.units == Units.FT and (self.width > 80 or self.depth > 80):

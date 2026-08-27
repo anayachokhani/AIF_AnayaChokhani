@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import rich
 from pathlib import Path
 from typing import Any, Literal
 
@@ -90,16 +91,19 @@ def check_budget(brief: RoomBrief, items: list[CatalogueItem]) -> tuple[CriticCh
 
 def check_sourceability(grounded: GrounderOutput, catalogue_ids: set[str]) -> CriticCheckResult:
     notes: list[str] = []
+    # print("===== GROUNDED SLOT DEBUG =====")
     for grounded_slot in grounded.grounded_slots:
+        # rich.print(grounded_slot)
         item = grounded_slot.selected_item
         if item is None:
             failure = grounded_slot.failure
             reason = failure.blocked_by if failure else "missing catalogue selection"
             notes.append(
-                f"Select an available {grounded_slot.slot.category.replace('_', ' ')}; catalogue matching was blocked by {reason}."
+                f"Select an available {grounded_slot.slot.category.replace('_', ' ')}: catalogue matching was blocked by {reason}."
             )
         elif item.item_id not in catalogue_ids:
             notes.append(f"Replace fake or unavailable item ID {item.item_id} with a curated catalogue item.")
+    # print("===== GROUNDED SLOT DEBUG =====")
     return CriticCheckResult(name="sourceability", status=CheckStatus.FAIL if notes else CheckStatus.PASS, notes=notes)
 
 
@@ -137,7 +141,7 @@ def critique_design(
     checks = [fit, budget, sourceability, vastu]
     print("===== Debug Critic Checks =====")
     # rich.print(checks)
-    rich.print([(check.name, check.status) for check in checks])
+    # rich.print([(check.name, check.status) for check in checks])
     print("===== Debug Critic Checks =====")
     passed = all(check.status in {CheckStatus.PASS, CheckStatus.WARN, CheckStatus.SKIPPED} for check in checks)
     repair_notes = [note for check in checks for note in check.notes if check.status in {CheckStatus.FAIL, CheckStatus.WARN}]

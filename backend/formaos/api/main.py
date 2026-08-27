@@ -1601,9 +1601,9 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     # rich.print(result)
     # print("*********** DEBUG RESULT ***********")
 
-    print("DEBUG PAYLOAD")
-    rich.print(payload)
-    print("DEBUG PAYLOAD")
+    # print("DEBUG PAYLOAD")
+    # rich.print(payload)
+    # print("DEBUG PAYLOAD")
 
     if result.status == "failed":
         print(f"Design {resolved_design_id} for session {session_id} has some flaws.")
