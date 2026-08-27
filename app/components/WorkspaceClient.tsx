@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../data";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import { ZoneGrid, type ZoneGridItem } from "./ZoneGrid";
+import { clonePageVaryPathWithNewSearchParams } from "next/dist/client/components/segment-cache/vary-path";
 
 const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"] as const;
 const units = ["ft", "m", "cm"] as const;
@@ -620,6 +621,7 @@ export function WorkspaceClient() {
   const [selectingItemId, setSelectingItemId] = useState("");
   const [deletingProjectId, setDeletingProjectId] = useState("");
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const [roomType, setRoomType] = useState("living_room");
   const [unit, setUnit] = useState<Unit>("ft");
   const [width, setWidth] = useState(14);
@@ -836,6 +838,7 @@ export function WorkspaceClient() {
   async function loadDesign(designId: string) {
     setLoading(true);
     setError("");
+    setWarning("");
     try {
       const response = await apiFetch(`/api/design/${designId}`);
       const payload = await parseResponse(response);
@@ -868,9 +871,14 @@ export function WorkspaceClient() {
     }
   }
 
+  function capitalizeFirstLetter(val: string) {
+      return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+  }
+
   async function createNewSessionAndSendMessage() {
     setLoading(true);
     setError("");
+    setWarning("");
     setDesign(null);
     setConceptImage(null);
     setSelectedRevisionId("");
@@ -915,6 +923,24 @@ export function WorkspaceClient() {
       
       setProgress("grounding");
       const chatPayload = await parseResponse(chatResponse);
+
+      console.log("chatPayload");
+      console.log(chatPayload);
+
+      const warningArray = [];
+
+      if (!chatPayload?.design?.critic_verdict?.passed) {
+        const constraints: string[] = ["budget", "fit", "sourceability", "vastu"];
+        for (let constraint of constraints) {
+          if (chatPayload?.design?.critic_verdict[constraint]["status"] == "fail") {
+            warningArray.push(`${capitalizeFirstLetter(constraint)} constraint could not be satisfied`);
+          }
+        }
+
+        const warningString = warningArray.join("\n");
+
+        setWarning(warningString);
+      }
 
       console.log("chatPayload");
       console.log(chatPayload);
@@ -1025,6 +1051,7 @@ export function WorkspaceClient() {
     setActiveTab("shopping");
     setProgress("planning");
     setError("");
+    setWarning("");
     setChatInput("Make this calmer and keep the same budget.");
     setStep(0);
   }
@@ -1033,6 +1060,7 @@ export function WorkspaceClient() {
     if (!window.confirm(`Delete ${projectName} and its complete chat and design history? This cannot be undone.`)) return;
     setDeletingProjectId(projectId);
     setError("");
+    setWarning("");
     try {
       const response = await apiFetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
       await parseResponse(response);
@@ -1058,6 +1086,7 @@ export function WorkspaceClient() {
     if (design && !displayedConcept?.image_data_url) {
       setLoading(true);
       setError("");
+      setWarning("");
       setProgress("designing");
       appendProjectMessage(design.project_id, "assistant", "The room plan is saved. I am generating its first visual now.");
       try {
@@ -1090,6 +1119,7 @@ export function WorkspaceClient() {
     createNewSessionAndSendMessage();
     // setLoading(true);
     // setError("");
+    // setWarning("");
     // setDesign(null);
     // setConceptImage(null);
     // setSelectedRevisionId("");
@@ -1161,6 +1191,7 @@ export function WorkspaceClient() {
     if (!trimmedMessage) return;
     setLoading(true);
     setError("");
+    setWarning("");
     setProgress("revising");
     const baseRevisionId = selectedRevisionId;
     const projectId = design.project_id || currentProjectId;
@@ -1214,6 +1245,7 @@ export function WorkspaceClient() {
     if (!design || !pendingRevision) return;
     setLoading(true);
     setError("");
+    setWarning("");
     setProgress("revising");
     try {
       const imagePayload = await generateConcept(design, pendingRevision);
@@ -1238,6 +1270,7 @@ export function WorkspaceClient() {
     if (!design || selectingItemId) return;
     setSelectingItemId(item.item_id);
     setError("");
+    setWarning("");
     try {
       const response = await apiFetch(`/api/design/${design.design_id}/select-item`, {
         method: "POST",
@@ -1584,7 +1617,15 @@ export function WorkspaceClient() {
                 {loading ? "Generating..." : design ? displayedConcept?.image_data_url ? "Regenerate selected version" : "Generate room image" : "Generate designs"}
               </button>
             </div>
-            {error ? <p className="workspace-error" role="alert">{error}</p> : null}
+            {error ? <div className="workspace-error" role="alert">{error}</div> : null}
+            {warning ? <div className="workspace-warning" role="alert">
+              {warning.split('\n').map((line, index) => (
+                <span key={index}>
+                  {line}
+                  <br />
+                </span>
+              ))}
+            </div> : null}
           </div>
 
           <div className="ys-chat-card" aria-label="Project chat">

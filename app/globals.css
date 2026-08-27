@@ -1302,12 +1302,23 @@ input[type="range"] {
 }
 
 .workspace-error {
-  margin: -4px 0 0;
+  margin: 10px 0 0;
   padding: 10px 12px;
   border: 1px solid rgba(184, 50, 42, 0.25);
   border-radius: 8px;
   background: #fde7e4;
   color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.workspace-warning {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(201, 207, 36, 0.25);
+  border-radius: 8px;
+  background: #e0d6b0;
+  color: var(--warn);
   font-size: 0.9rem;
   font-weight: 700;
 }
