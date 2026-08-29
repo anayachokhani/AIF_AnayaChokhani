@@ -16,6 +16,7 @@ dependencies = [
   "numpy",
   "langgraph",
   "chromadb",
+  "requests"
 ]
 
 [project.optional-dependencies]
