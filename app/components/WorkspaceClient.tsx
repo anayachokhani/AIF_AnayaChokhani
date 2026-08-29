@@ -598,6 +598,7 @@ function newChatMessage(role: ProjectChatMessage["role"], text: string): Project
 }
 
 export function WorkspaceClient() {
+  const presetBudgetNumber = 245000;
   const router = useRouter();
   const [homeowner, setHomeowner] = useState<StoredHomeowner | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -627,11 +628,11 @@ export function WorkspaceClient() {
   const [width, setWidth] = useState(14);
   const [depth, setDepth] = useState(18);
   const [height, setHeight] = useState(10);
-  const [budget, setBudget] = useState(245000);
-  const [budgetInput, setBudgetInput] = useState("245000");
+  const [budget, setBudget] = useState(presetBudgetNumber);
+  const [budgetInput, setBudgetInput] = useState(String(presetBudgetNumber));
   const [selectedStyles, setSelectedStyles] = useState(["Modern"]);
   const [selectedPreferences, setSelectedPreferences] = useState(["More storage", "Natural light", "Greenery"]);
-  const [vastuEnabled, setVastuEnabled] = useState(true);
+  const [vastuEnabled, setVastuEnabled] = useState(false);
   const [mainDoor, setMainDoor] = useState<Direction>("N");
   const [compass, setCompass] = useState<Direction>("N");
   const [chatInput, setChatInput] = useState("Make this calmer and keep the same budget.");
@@ -1527,8 +1528,13 @@ export function WorkspaceClient() {
 
           {step === 3 ? (
             <section className="ys-vastu-step">
+              <div className="vastu-disclaimer">
+                Note: YourSpace treats Vastu as opt-in traditional guidance only. 
+                It is not a scientific guarantee, architectural certification, safety review, legal advice, or a promise of any outcome. 
+                We do not apply these rules unless the user explicitly enables Vastu guidance in the room brief.
+              </div>
               <div className="ys-vastu-step-heading">
-                <div><span className="eyebrow">Placement intelligence</span><h1>Design with Vastu guidance?</h1><p>Set the room orientation used for furniture placement and the final Vastu score.</p></div>
+                <div className="eyebrow-container"><span className="eyebrow">Placement intelligence</span><h1 style={{marginBottom: '0px'}}>Design with Vastu guidance?</h1><p>Set the room orientation used for furniture placement and the final Vastu score.</p></div>
                 <label className="ys-vastu-toggle">
                   <input type="checkbox" checked={vastuEnabled} onChange={(event) => setVastuEnabled(event.target.checked)} />
                   <span aria-hidden="true" />
