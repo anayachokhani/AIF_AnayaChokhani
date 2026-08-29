@@ -18,25 +18,34 @@ urls = {
 for url in urls:
     file_name = url.split("/")[-1]
     destination = DATA_DIR / file_name
+    temporary_file = destination.with_suffix(destination.suffix + ".tmp")
 
     print(f"Saving {url} to {destination}")
 
-    with requests.get(url, stream=True) as response:
-        response.raise_for_status()
+    try:
+        with requests.get(url, stream=True) as response:
+            response.raise_for_status()
 
-        total_size = int(response.headers.get("content-length", 0))
+            total_size = int(response.headers.get("content-length", 0))
 
-        with destination.open("wb") as f:
-            with tqdm(
-                total = total_size,
-                unit="B",
-                unit_scale=True,
-                unit_divisor=1024,
-                desc=file_name
-            ) as progress:
-                for chunk in response.iter_content(chunk_size=(8 * BYTES_IN_AN_MB)):
-                    if chunk:
-                        f.write(chunk)
-                        progress.update(len(chunk))
+            with temporary_file.open("wb") as f:
+                with tqdm(
+                    total = total_size,
+                    unit="B",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=file_name
+                ) as progress:
+                    for chunk in response.iter_content(chunk_size=(BYTES_IN_AN_MB)):
+                        if chunk:
+                            f.write(chunk)
+                            progress.update(len(chunk))
 
-    print(f"Completed downloading {file_name}")
+        temporary_file.replace(destination)
+
+        print(f"Completed downloading {file_name}")
+
+    except (requests.RequestException, OSError) as e:
+        temporary_file.unlink(missing_ok=True)
+
+        print(f"Failed to download {file_name}: {e}")
