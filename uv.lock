@@ -537,6 +537,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "requests" },
     { name = "uvicorn" },
 ]
 
@@ -560,6 +561,7 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
+    { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "uvicorn" },
 ]

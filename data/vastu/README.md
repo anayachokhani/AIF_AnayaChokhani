@@ -2,7 +2,7 @@
 
 YourSpace treats Vastu as opt-in traditional guidance only. It is not a
 scientific guarantee, architectural certification, safety review, legal advice,
-or a promise of any outcome. The application must not apply these rules unless
+or a promise of any outcome. We do not apply these rules unless
 the user explicitly enables Vastu guidance in the room brief.
 
 The MVP target file is:
