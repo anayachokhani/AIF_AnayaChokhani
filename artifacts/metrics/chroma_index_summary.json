@@ -1,6 +1,6 @@
 {
-  "catalogue_path": "data/curated/abo_mvp_catalogue_with_images.csv",
-  "chroma_path": "data/vectorstores/chroma",
+  "catalogue_path": "data\\curated\\abo_mvp_catalogue_with_images.csv",
+  "chroma_path": "data\\vectorstores\\chroma",
   "collection": "formaos_catalogue_v1",
   "input_rows": 180,
   "indexed_count": 180,

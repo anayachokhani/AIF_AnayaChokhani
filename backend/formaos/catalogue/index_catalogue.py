@@ -9,6 +9,7 @@ import re
 import sys
 from pathlib import Path
 
+import rich
 import chromadb
 from chromadb import EmbeddingFunction, Embeddings
 
@@ -154,12 +155,18 @@ def search_items(
     collection = client.get_or_create_collection(COLLECTION_NAME, embedding_function=HashingEmbeddingFunction())
     count = collection.count()
     if count == 0 or k <= 0:
+        rich.print(f"DEBUG COUNT\n{count = }")
+        rich.print(f"DEBUG k\n{k = }")
         return []
     candidate_count = min(count, max(SEMANTIC_CANDIDATE_LIMIT, k * 8, k))
     results = collection.query(query_texts=[query], n_results=candidate_count)
     metadatas = results.get("metadatas", [[]])[0]
     distances = results.get("distances", [[]])[0]
     output: list[dict[str, object]] = []
+    rich.print(f"DEBUG METADATAS\n{len(metadatas) = }")
+    rich.print(f"DEBUG METADATAS\n{metadatas = }")
+    rich.print(f"DEBUG DISTANCES\n{len(distances) = }")
+    rich.print(f"DEBUG DISTANCES\n{distances = }")
     for metadata, distance in zip(metadatas, distances):
         if metadata_passes(metadata, category, max_width_cm, max_depth_cm, max_price_inr):
             output.append({**metadata, "distance": distance})

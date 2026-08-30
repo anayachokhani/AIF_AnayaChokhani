@@ -195,28 +195,30 @@ def diagnose_failure(
 ) -> GroundingFailure:
     rows = load_catalogue_rows(catalogue_path)
     category_rows = [row for row in rows if row.get("normalized_category") == slot.category]
+    # rich.print(f"DEBUG CATEGORY ROWS\n{category_rows = }")
     if not category_rows:
         code: FailureCode = "category"
         blocked_by = "category_unavailable"
     else:
-        width_rows = [row for row in category_rows if float(row["width_cm"]) <= constraints.max_width_cm]
-        depth_rows = [row for row in category_rows if float(row["depth_cm"]) <= constraints.max_depth_cm]
-        dimension_rows = [
+        satisfying_width_rows = [row for row in category_rows if float(row["width_cm"]) <= constraints.max_width_cm]
+        satisfying_depth_rows = [row for row in category_rows if float(row["depth_cm"]) <= constraints.max_depth_cm]
+        satisfying_dimension_rows = [
             row
             for row in category_rows
             if float(row["width_cm"]) <= constraints.max_width_cm and float(row["depth_cm"]) <= constraints.max_depth_cm
         ]
-        if not dimension_rows:
-            if not width_rows:
+        rich.print(f"DEBUG DIMENSION SATISFYING ROWS\n{satisfying_dimension_rows = }")
+        if not satisfying_dimension_rows:
+            if not satisfying_width_rows:
                 code = "width"
                 blocked_by = "maximum_width_exceeded"
-            elif not depth_rows:
+            elif not satisfying_depth_rows:
                 code = "depth"
                 blocked_by = "maximum_depth_exceeded"
             else:
                 code = "dimensions"
                 blocked_by = "dimension_combination_exceeded"
-        elif not any(int(row["price_inr"]) <= constraints.max_price_inr for row in dimension_rows):
+        elif not any(int(row["price_inr"]) <= constraints.max_price_inr for row in satisfying_dimension_rows):
             code = "budget"
             blocked_by = "budget_exceeded"
         else:
@@ -267,6 +269,7 @@ def ground_slot(
         chroma_path=chroma_path,
     )
     results = sorted(results, key=lambda item: room_relevance_score(brief, slot, item))
+    rich.print(f"DEBUG RESULTS\n{results = }")
     if not results:
         return GroundedSlot(
             slot=slot,
@@ -305,10 +308,14 @@ def ground_design(
     if not valid_slots:
         raise GrounderValidationError("Grounder requires at least one DesignSlot.")
 
+    rich.print("DEBUG VALID SLOTS")
+    rich.print(f"{len(valid_slots) = }")
+    rich.print(f"{valid_slots = }")
+
     grounded_slots = [
         ground_slot(valid_brief, slot, chroma_path=chroma_path, catalogue_path=catalogue_path) for slot in valid_slots
     ]
-    
+
     try:
         return GrounderOutput(grounded_slots=grounded_slots)
     except (ValidationError, ValueError) as exc:

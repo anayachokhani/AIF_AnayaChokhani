@@ -16,7 +16,6 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
-from pprint import pprint
 import rich
 
 import httpx
@@ -1049,28 +1048,28 @@ def product_image_references(
 ) -> list[tuple[str, str]]:
     references: list[tuple[str, str]] = []
 
-    print("\n=== product_image_references DEBUG ===")
-    print(f"design is None: {design is None}")
-    print(f"limit: {limit}")
-    print(f"revision_text: {revision_text!r}")
-    print(f"matched_only: {matched_only}")
+    rich.print("\n=== product_image_references DEBUG ===")
+    rich.print(f"design is None: {design is None}")
+    rich.print(f"limit: {limit}")
+    rich.print(f"revision_text: {revision_text!r}")
+    rich.print(f"matched_only: {matched_only}")
 
     if not design or limit <= 0:
-        print("EARLY RETURN: no design or limit <= 0")
+        rich.print("EARLY RETURN: no design or limit <= 0")
         return references
 
     grounder_output = design.get("grounder_output", {})
-    print(f"grounder_output type: {type(grounder_output)}")
-    print(f"grounder_output keys: {list(grounder_output.keys()) if isinstance(grounder_output, dict) else 'N/A'}")
+    rich.print(f"grounder_output type: {type(grounder_output)}")
+    rich.print(f"grounder_output keys: {list(grounder_output.keys()) if isinstance(grounder_output, dict) else 'N/A'}")
 
     slots = list(grounder_output.get("grounded_slots", []))
-    print(f"Initial slot count: {len(slots)}")
+    rich.print(f"Initial slot count: {len(slots)}")
 
     for i, slot in enumerate(slots):
-        print(f"\n--- SLOT {i} ---")
-        print(f"slot: {slot}")
-        print(f"slot.category: {slot.get('slot', {}).get('category')}")
-        print(f"selected_item: {slot.get('selected_item')}")
+        rich.print(f"\n--- SLOT {i} ---")
+        rich.print(f"slot: {slot}")
+        rich.print(f"slot.category: {slot.get('slot', {}).get('category')}")
+        rich.print(f"selected_item: {slot.get('selected_item')}")
 
     normalized_revision = revision_text.lower()
     refresh_all = any(
@@ -1083,8 +1082,8 @@ def product_image_references(
         ]
     )
 
-    print(f"\nnormalized_revision: {normalized_revision!r}")
-    print(f"refresh_all: {refresh_all}")
+    rich.print(f"\nnormalized_revision: {normalized_revision!r}")
+    rich.print(f"refresh_all: {refresh_all}")
 
     if matched_only and not refresh_all:
         before_count = len(slots)
@@ -1102,14 +1101,14 @@ def product_image_references(
                 for value in values
             )
 
-            print(f"MATCH CHECK: values={values!r}, matched={matched}")
+            rich.print(f"MATCH CHECK: values={values!r}, matched={matched}")
 
             if matched:
                 filtered_slots.append(slot)
 
         slots = filtered_slots
 
-        print(
+        rich.print(
             f"After matched_only filtering: "
             f"{len(slots)}/{before_count} slots remain"
         )
@@ -1117,39 +1116,39 @@ def product_image_references(
     # ... existing sort ...
 
     for i, slot in enumerate(slots):
-        # print(f"\n=== PROCESSING SLOT {i} ===")
+        # rich.print(f"\n=== PROCESSING SLOT {i} ===")
 
         item = slot.get("selected_item") or {}
 
-        # print(f"item: {item}")
+        # rich.print(f"item: {item}")
 
         raw_image_path = item.get("image_path")
         image_path = str(raw_image_path or "").lstrip("/")
 
-        # print(f"raw image_path: {raw_image_path!r}")
-        # print(f"normalized image_path: {image_path!r}")
-        # print(f"starts with product-images/: {image_path.startswith('product-images/')}")
+        # rich.print(f"raw image_path: {raw_image_path!r}")
+        # rich.print(f"normalized image_path: {image_path!r}")
+        # rich.print(f"starts with product-images/: {image_path.startswith('product-images/')}")
 
         if not image_path.startswith("product-images/"):
-            # print("SKIP: image path does not start with product-images/")
+            # rich.print("SKIP: image path does not start with product-images/")
             continue
 
         local_path = Path("public") / image_path
 
-        # print(f"local_path: {local_path}")
-        # print(f"absolute local_path: {local_path.resolve()}")
-        # print(f"exists: {local_path.exists()}")
-        # print(f"is_file: {local_path.is_file()}")
+        # rich.print(f"local_path: {local_path}")
+        # rich.print(f"absolute local_path: {local_path.resolve()}")
+        # rich.print(f"exists: {local_path.exists()}")
+        # rich.print(f"is_file: {local_path.is_file()}")
 
         try:
             image_bytes = local_path.read_bytes()
-            # print(f"READ SUCCESS: {len(image_bytes)} bytes")
+            # rich.print(f"READ SUCCESS: {len(image_bytes)} bytes")
         except OSError as exc:
-            # print(f"READ FAILED: {type(exc).__name__}: {exc}")
+            # rich.print(f"READ FAILED: {type(exc).__name__}: {exc}")
             continue
 
         suffix = local_path.suffix.lower()
-        # print(f"suffix: {suffix}")
+        # rich.print(f"suffix: {suffix}")
 
         mime_type = (
             "image/png"
@@ -1167,24 +1166,24 @@ def product_image_references(
             f"{item.get('title', item.get('item_id', 'catalogue item'))}"
         )
 
-        # print(f"label: {label!r}")
-        # print(f"mime_type: {mime_type}")
-        # print(f"encoded length: {len(encoded)}")
+        # rich.print(f"label: {label!r}")
+        # rich.print(f"mime_type: {mime_type}")
+        # rich.print(f"encoded length: {len(encoded)}")
 
         references.append(
             (label, f"data:{mime_type};base64,{encoded}")
         )
 
-        # print(f"REFERENCE APPENDED. Count is now {len(references)}")
+        # rich.print(f"REFERENCE APPENDED. Count is now {len(references)}")
 
         if len(references) >= limit:
-            # print(f"LIMIT REACHED: {limit}")
+            # rich.print(f"LIMIT REACHED: {limit}")
             break
 
-    # print("\n=== FINAL DEBUG ===")
-    # print(f"Final reference count: {len(references)}")
-    # print(f"Reference labels: {[r[0] for r in references]}")
-    # print("=== END DEBUG ===\n")
+    # rich.print("\n=== FINAL DEBUG ===")
+    # rich.print(f"Final reference count: {len(references)}")
+    # rich.print(f"Reference labels: {[r[0] for r in references]}")
+    # rich.print("=== END DEBUG ===\n")
 
     return references
 
@@ -1566,12 +1565,12 @@ async def analyze_generated_products(
 
 
 def run_design_for_session(session_id: str, max_retries: int, design_id: str | None = None) -> dict[str, Any]:
-    print("Hii 1")
+    rich.print("Hii 1")
     state = state_store.get(session_id)
-    print("Hii 2")
+    rich.print("Hii 2")
     if state is None or state.brief is None:
         raise typed_error(404, "not_found", "session not found")
-    print("Hii 3")
+    rich.print("Hii 3")
     try:
         result = run_agent_loop(
             state.brief,
@@ -1580,8 +1579,8 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
             chroma_path=CHROMA_PATH,
             max_retries=max_retries,
         )
-        print("Hii 4")
-        print("Hiiiiiiiiiiiiiiiiiiiiii")
+        rich.print("Hii 4")
+        rich.print("Hiiiiiiiiiiiiiiiiiiiiii")
     except RuntimeError as exc:
         if str(exc) == "missing_api_key":
             raise typed_error(503, "missing_api_key", "planner API key is not configured on the backend") from exc
@@ -1589,7 +1588,7 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     except HTTPException:
         raise
     except Exception as exc:
-        print(f"Exception: {exc}")
+        rich.print(f"Exception: {exc}")
         raise typed_error(500, "graph_failure", "agent graph failed", error=exc.__class__.__name__) from exc
 
     resolved_design_id = design_id or f"design-{uuid4().hex[:12]}"
@@ -1597,7 +1596,7 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
     design_store.save(resolved_design_id, payload)
     state.attempt_log = payload["attempt_log"]
 
-    # print("*********** DEBUG RESULT ***********")
+    # rich.print("*********** DEBUG RESULT ***********")
     # rich.print(result)
     # print("*********** DEBUG RESULT ***********")
 
@@ -1820,9 +1819,9 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
     existing_design: dict[str, Any] | None = None
     if payload.design_id:
         existing_design = design_store.get(payload.design_id)
-        print("===== Existing Design =====")
-        print(existing_design)
-        print("===== Existing Design =====")
+        rich.print("===== Existing Design =====")
+        rich.print(existing_design)
+        rich.print("===== Existing Design =====")
         if existing_design:
             assert_design_owner(existing_design, request_user(request))
             existing_design = dict(existing_design)
@@ -1858,7 +1857,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
     if source_images:
         references.append(("original room photo; architecture and camera source of truth", source_images[0]))
     remaining_reference_slots = max(0, 12 - len(references))    # ...
-    print(f"Remaining reference slots: {remaining_reference_slots}")
+    rich.print(f"Remaining reference slots: {remaining_reference_slots}")
     references.extend(
         product_image_references(
             payload.grounded_design or existing_design,
