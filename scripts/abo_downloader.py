@@ -20,7 +20,7 @@ for url in urls:
     destination = DATA_DIR / file_name
     temporary_file = destination.with_suffix(destination.suffix + ".tmp")
 
-    print(f"Saving {url} to {destination}")
+    print(f"Saving {url} to {destination}\n")
 
     try:
         with requests.get(url, stream=True) as response:
@@ -43,9 +43,9 @@ for url in urls:
 
         temporary_file.replace(destination)
 
-        print(f"Completed downloading {file_name}")
+        print(f"Completed downloading {file_name}\n")
 
-    except (requests.RequestException, OSError) as e:
+    except BaseException as e:
         temporary_file.unlink(missing_ok=True)
 
-        print(f"Failed to download {file_name}: {e}")
+        print(f"Failed to download {file_name}: {e}\n")
