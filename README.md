@@ -30,6 +30,14 @@ export UV_CACHE_DIR="$PWD/.uv-cache"
 export PYTHONPATH=backend
 ```
 
+Or for Windows
+
+```bash
+$env:PATH = "$PWD\.tools\node\bin;$PWD\.tools\bin;$env:PATH"
+$env:UV_CACHE_DIR = "$PWD\.uv-cache"
+$env:PYTHONPATH = "backend"
+```
+
 ## Frontend
 
 ```bash

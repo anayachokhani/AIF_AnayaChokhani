@@ -351,7 +351,7 @@ function finishScheduleFor(
     contrast: [contrast.name, contrast.hex],
     accent: [accent.name, accent.hex],
   };
-  const roomLabel = roomType.replace("_", " ");
+  const roomLabel = roomType.replaceAll("_", " ");
   const selectedCategories = new Set(slots.map((slot) => slot.slot.category));
   const sourceableNote = selectedCategories.size
     ? `Coordinates with selected ${Array.from(selectedCategories).join(", ")}.`
@@ -638,10 +638,10 @@ export function WorkspaceClient() {
   const [chatInput, setChatInput] = useState("Make this calmer and keep the same budget.");
 
   const style = [...selectedStyles, ...selectedPreferences].join(" ");
-  const designGoal = `Design my ${roomType.replace("_", " ")} with ${selectedStyles.join(", ")} style.`;
+  const designGoal = `Design my ${roomType.replaceAll("_", " ")} with ${selectedStyles.join(", ")} style.`;
   const message = `Create a saved design with ${selectedPreferences.join(", ")}.`;
   const dimensionsLabel = `${depth} ft x ${width} ft x ${height} ft`;
-  const projectName = `${roomType.replace("_", " ")} - ${selectedStyles.slice(0, 2).join(", ") || "New design"}`;
+  const projectName = `${roomType.replaceAll("_", " ")} - ${selectedStyles.slice(0, 2).join(", ") || "New design"}`;
   const photoNotes = photos.map((photo) => `${photo.name}: ${photo.note}`);
   const slots = selectedSlots(design);
   const budgetStatus = design?.critic_verdict.budget.status ?? "waiting";
@@ -1609,7 +1609,7 @@ export function WorkspaceClient() {
             <h1>Almost there!</h1>
             <p>Review your details before we design.</p>
             <dl>
-              <div><dt>Room type</dt><dd>{roomType.replace("_", " ")}</dd></div>
+              <div><dt>Room type</dt><dd>{roomType.replaceAll("_", " ")}</dd></div>
               <div><dt>Dimensions</dt><dd>{dimensionsLabel}</dd></div>
               <div><dt>Style</dt><dd>{selectedStyles.join(", ")}</dd></div>
               <div className="ys-review-palette"><dt>Palette</dt><dd>{stylePalettes[0]?.palette.map((colour) => <i key={colour.hex} style={{ backgroundColor: colour.hex }} title={`${colour.name} ${colour.hex}`} />)}</dd></div>
@@ -1709,6 +1709,17 @@ export function WorkspaceClient() {
                     afterAlt="Selected generated design version"
                     className="concept-before-after"
                   />
+                </div>
+              ) : null}
+              {!conceptLoading && displayedConcept?.image_data_url && comparisonImage ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  width: '100%'
+                }}>
+                  <a href={displayedConcept.image_data_url} download={(`${roomType}_${selectedStyles.join("_")}_${selectedPreferences.join("_")}.jpg`).replaceAll(" ", "_").toLowerCase()}>
+                    <div className="primary-button">Download Image</div>
+                  </a>
                 </div>
               ) : null}
               {!conceptLoading && displayedConcept?.image_data_url && !comparisonImage ? <img className="concept-image" src={displayedConcept.image_data_url} alt="Generated interior design concept" /> : null}
