@@ -94,6 +94,18 @@ npm run demo:acceptance
 
 ## Dataset Commands
 
+Download the ABO (Amazon Berkeley Objects) dataset
+
+```bash
+uv run python backend/formaos/catalogue/download_abo.py
+```
+
+Extract the ABO dataset tar files
+
+```bash
+uv run python backend/formaos/catalogue/extract_abo.py
+```
+
 Inventory extracted ABO listings:
 
 ```bash
@@ -103,7 +115,7 @@ uv run python backend/formaos/catalogue/inspect_abo.py --input data/external/abo
 Create the starter curated catalogue:
 
 ```bash
-uv run python backend/formaos/catalogue/curate_abo_subset.py --input data/external/abo \ --output data/curated/abo_mvp_catalogue.csv --limit 200
+uv run python backend/formaos/catalogue/curate_abo_subset.py --input data/external/abo --output data/curated/abo_mvp_catalogue.csv --limit 200
 ```
 
 Validate the curated catalogue and create a price review queue:
