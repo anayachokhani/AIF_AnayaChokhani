@@ -95,4 +95,5 @@ retrieval.
 
 The MVP uses a small reviewed JSON rule file rather than a public dataset. Each
 rule should include source URLs, rationale, confidence, and severity. Rules are
-opt-in guidance only.
+opt-in guidance only. These are not a scientific guarantee, architectural certification,
+safety review, legal advice, or a promise of any outcome.
