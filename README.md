@@ -30,9 +30,9 @@ export UV_CACHE_DIR="$PWD/.uv-cache"
 export PYTHONPATH=backend
 ```
 
-Or for Windows
+Or for Windows, run these commands in the Powershell
 
-```bash
+```powershell
 $env:PATH = "$PWD\.tools\node\bin;$PWD\.tools\bin;$env:PATH"
 $env:UV_CACHE_DIR = "$PWD\.uv-cache"
 $env:PYTHONPATH = "backend"
@@ -97,51 +97,32 @@ npm run demo:acceptance
 Inventory extracted ABO listings:
 
 ```bash
-uv run python backend/formaos/catalogue/inspect_abo.py \
-  --input data/external/abo \
-  --output artifacts/metrics/abo_inventory.json
+uv run python backend/formaos/catalogue/inspect_abo.py --input data/external/abo --output artifacts/metrics/abo_inventory.json
 ```
 
 Create the starter curated catalogue:
 
 ```bash
-uv run python backend/formaos/catalogue/curate_abo_subset.py \
-  --input data/external/abo \
-  --output data/curated/abo_mvp_catalogue.csv \
-  --limit 200
+uv run python backend/formaos/catalogue/curate_abo_subset.py --input data/external/abo \ --output data/curated/abo_mvp_catalogue.csv --limit 200
 ```
 
 Validate the curated catalogue and create a price review queue:
 
 ```bash
-uv run python backend/formaos/catalogue/validate_catalogue.py \
-  --catalogue data/curated/abo_mvp_catalogue.csv \
-  --summary artifacts/metrics/catalogue_validation.json \
-  --price-review data/curated/price_review_queue.csv
+uv run python backend/formaos/catalogue/validate_catalogue.py --catalogue data/curated/abo_mvp_catalogue.csv --summary artifacts/metrics/catalogue_validation.json --price-review data/curated/price_review_queue.csv
 ```
 
 Map ABO product images after `abo-images-small.tar` has been downloaded and
 extracted:
 
 ```bash
-uv run python backend/formaos/catalogue/map_images.py \
-  --catalogue data/curated/abo_mvp_catalogue.csv \
-  --abo-root data/external/abo \
-  --images-root data/external/abo/images \
-  --output data/curated/abo_mvp_catalogue_with_images.csv \
-  --summary artifacts/metrics/image_mapping_summary.json \
-  --strict
+uv run python backend/formaos/catalogue/map_images.py --catalogue data/curated/abo_mvp_catalogue.csv --abo-root data/external/abo --images-root data/external/abo/images --output data/curated/abo_mvp_catalogue_with_images.csv --summary artifacts/metrics/image_mapping_summary.json --strict
 ```
 
 Build and smoke test the local Chroma retrieval index:
 
 ```bash
-uv run python backend/formaos/catalogue/index_catalogue.py \
-  --catalogue data/curated/abo_mvp_catalogue_with_images.csv \
-  --chroma-path data/vectorstores/chroma \
-  --summary artifacts/metrics/chroma_index_summary.json \
-  --smoke-report artifacts/metrics/retrieval_smoke_report.json \
-  --strict
+uv run python backend/formaos/catalogue/index_catalogue.py --catalogue data/curated/abo_mvp_catalogue_with_images.csv --chroma-path data/vectorstores/chroma --summary artifacts/metrics/chroma_index_summary.json --smoke-report artifacts/metrics/retrieval_smoke_report.json --strict
 ```
 
 ## Main files
