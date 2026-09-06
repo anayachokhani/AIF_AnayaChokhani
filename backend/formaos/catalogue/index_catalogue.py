@@ -165,8 +165,8 @@ def search_items(
     output: list[dict[str, object]] = []
     rich.print(f"DEBUG METADATAS\n{len(metadatas) = }")
     rich.print(f"DEBUG METADATAS\n{metadatas = }")
-    rich.print(f"DEBUG DISTANCES\n{len(distances) = }")
-    rich.print(f"DEBUG DISTANCES\n{distances = }")
+    # rich.print(f"DEBUG DISTANCES\n{len(distances) = }")
+    # rich.print(f"DEBUG DISTANCES\n{distances = }")
     for metadata, distance in zip(metadatas, distances):
         if metadata_passes(metadata, category, max_width_cm, max_depth_cm, max_price_inr):
             output.append({**metadata, "distance": distance})

@@ -14,6 +14,7 @@ dependencies = [
   "chromadb",
   "pandas",
   "numpy",
+  "scipy",
   "langgraph",
   "chromadb",
   "requests"

@@ -1048,11 +1048,11 @@ def product_image_references(
 ) -> list[tuple[str, str]]:
     references: list[tuple[str, str]] = []
 
-    rich.print("\n=== product_image_references DEBUG ===")
-    rich.print(f"design is None: {design is None}")
-    rich.print(f"limit: {limit}")
-    rich.print(f"revision_text: {revision_text!r}")
-    rich.print(f"matched_only: {matched_only}")
+    # rich.print("\n=== product_image_references DEBUG ===")
+    # rich.print(f"design is None: {design is None}")
+    # rich.print(f"limit: {limit}")
+    # rich.print(f"revision_text: {revision_text!r}")
+    # rich.print(f"matched_only: {matched_only}")
 
     if not design or limit <= 0:
         rich.print("EARLY RETURN: no design or limit <= 0")

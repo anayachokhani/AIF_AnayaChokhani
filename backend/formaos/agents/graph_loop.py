@@ -198,9 +198,9 @@ def run_agent_loop(
         }
     )
 
-    print("===== Debug Agent Loop State =====")
-    rich.print(state)
-    print("===== Debug Agent Loop State =====")
+    # print("===== Debug Agent Loop State =====")
+    # rich.print(state)
+    # print("===== Debug Agent Loop State =====")
 
     status = state.get("final_status", "failed")
     return AgentLoopResult(

@@ -4,6 +4,9 @@ import csv
 import rich
 from pathlib import Path
 from typing import Any, Literal
+import random
+import math
+from scipy.special import softmax
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
@@ -147,7 +150,7 @@ def slot_query(slot: DesignSlot) -> str:
     return " ".join(part for part in parts if part).strip() or slot.category
 
 
-def room_relevance_score(brief: RoomBrief, slot: DesignSlot, item: dict[str, Any]) -> tuple[float, float]:
+def assign_and_return_room_relevance_score(brief: RoomBrief, slot: DesignSlot, item: dict[str, Any]) -> tuple[float, float]:
     preferred, discouraged = ROOM_CATEGORY_TITLE_RULES.get((brief.room_type, slot.category), (set(), set()))
     title = str(item.get("title") or "").lower()
     semantic_penalty = 0.0
@@ -155,7 +158,10 @@ def room_relevance_score(brief: RoomBrief, slot: DesignSlot, item: dict[str, Any
         semantic_penalty += 2.0
     semantic_penalty -= sum(1.0 for term in preferred if term in title)
     semantic_penalty += sum(8.0 for term in discouraged if term in title)
-    return semantic_penalty, float(item.get("distance") or 0.0)
+    distance = float(item.get("distance") or 0.0)
+    item["vector_distance"] = distance
+    item["semantic_penalty"] = semantic_penalty
+    return semantic_penalty, distance
 
 
 def catalogue_item_from_metadata(metadata: dict[str, Any], placement_zone: Direction | None = None) -> CatalogueItem:
@@ -207,7 +213,7 @@ def diagnose_failure(
             for row in category_rows
             if float(row["width_cm"]) <= constraints.max_width_cm and float(row["depth_cm"]) <= constraints.max_depth_cm
         ]
-        rich.print(f"DEBUG DIMENSION SATISFYING ROWS\n{satisfying_dimension_rows = }")
+        # rich.print(f"DEBUG DIMENSION SATISFYING ROWS\n{satisfying_dimension_rows = }")
         if not satisfying_dimension_rows:
             if not satisfying_width_rows:
                 code = "width"
@@ -252,13 +258,17 @@ def ground_slot(
     except PlacementZoneError as exc:
         raise GrounderValidationError("Grounder received invalid placement hint.", original_error=exc) from exc
     try:
-        rich.print("============= Debug Slot Constraint =============")
         constraints = compute_slot_limits(brief, slot)
-        rich.print(constraints)
-        rich.print("============= Debug Slot Constraint =============")
+        # rich.print("============= Debug Slot Constraint =============")
+        # rich.print(constraints)
+        # rich.print("============= Debug Slot Constraint =============")
     except KeyError as exc:
         raise GrounderValidationError("Grounder received invalid placement hint.", original_error=exc) from exc
     query = slot_query(slot)
+
+    print("DEBUG QUERY")
+    print(query)
+
     results = search_items(
         query,
         category=slot.category,
@@ -268,8 +278,14 @@ def ground_slot(
         k=15,
         chroma_path=chroma_path,
     )
-    results = sorted(results, key=lambda item: room_relevance_score(brief, slot, item))
-    rich.print(f"DEBUG RESULTS\n{results = }")
+
+    # rich.print("DEBUG RESULTS")
+    # rich.print(results)
+    
+    # results = sorted(results, key=lambda item: room_relevance_score(brief, slot, item))
+
+    # rich.print(f"DEBUG RESULTS\n{results = }")
+
     if not results:
         return GroundedSlot(
             slot=slot,
@@ -278,8 +294,59 @@ def ground_slot(
             failure=diagnose_failure(slot, constraints, query, catalogue_path=catalogue_path),
         )
 
-    selected = catalogue_item_from_metadata(results[0], placement_zone)
+    top_results = sorted(
+        results,
+        key=lambda item: assign_and_return_room_relevance_score(brief, slot, item),
+    )[: min(10, len(results))]
+
+    vector_distances: list[float] = [
+        item["vector_distance"]
+        for item in top_results
+    ]   # type: ignore
+
+    semantic_penalties: list[float] = [
+        item["semantic_penalty"]
+        for item in top_results
+    ]   # type: ignore
+
+    # Lower semantic penalty better
+    # Lower vector distance score better
+    # Lower sum of penalty and distance better
+    # net_score = -(vector_distance + semantic_penalty)
+    # higher net score better, turn to weights
+
+    net_scores: list[float] = [
+        -(float(item["vector_distance"]) + float(item["semantic_penalty"]))     # type: ignore
+        for item in top_results
+    ]
+
+    probabilities = softmax(net_scores)
+    
+    rich.print("DEBUG TOP RESULTS")
+
+    rich.print(top_results)
+    
+    rich.print("DEBUG DISTANCE SCORES")
+
+    rich.print(vector_distances)
+    
+    rich.print("DEBUG SEMANTIC PENALTIES")
+
+    rich.print(semantic_penalties)
+    
+    rich.print("DEBUG PROBABILITIES")
+
+    rich.print(probabilities)
+
+    selected = catalogue_item_from_metadata(
+        random.choices(top_results, weights=probabilities, k=1)[0],
+        placement_zone,
+    )
+
+    # selected = catalogue_item_from_metadata(results[0], placement_zone)
+
     alternatives = [catalogue_item_from_metadata(result, placement_zone) for result in results[1 : MAX_ALTERNATIVES + 1]]
+    
     try:
         return GroundedSlot(
             slot=slot,

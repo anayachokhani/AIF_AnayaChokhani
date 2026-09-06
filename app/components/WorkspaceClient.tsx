@@ -1722,7 +1722,19 @@ export function WorkspaceClient() {
                   </a>
                 </div>
               ) : null}
-              {!conceptLoading && displayedConcept?.image_data_url && !comparisonImage ? <img className="concept-image" src={displayedConcept.image_data_url} alt="Generated interior design concept" /> : null}
+              {!conceptLoading && displayedConcept?.image_data_url && !comparisonImage ? 
+                <>
+                  <img className="concept-image" src={displayedConcept.image_data_url} alt="Generated interior design concept" />
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    width: '100%'
+                  }}>
+                    <a href={displayedConcept.image_data_url} download={(`${roomType}_${selectedStyles.join("_")}_${selectedPreferences.join("_")}.jpg`).replaceAll(" ", "_").toLowerCase()}>
+                      <div className="primary-button">Download Image</div>
+                    </a>
+                  </div>
+                </> : null}
               {!conceptLoading && displayedConcept && !displayedConcept.image_data_url ? <pre>{displayedConcept.image_prompt}</pre> : null}
               {design ? (
                 <div className="design-intelligence-strip" aria-label="Design summary">
