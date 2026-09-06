@@ -17,7 +17,8 @@ dependencies = [
   "scipy",
   "langgraph",
   "chromadb",
-  "requests"
+  "requests",
+  "pillow"
 ]
 
 [project.optional-dependencies]

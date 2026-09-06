@@ -16,6 +16,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+import io
+from PIL import Image
 import rich
 
 import httpx
@@ -995,17 +997,115 @@ def build_concept_prompt(
 
 
 def image_bytes_from_data_url(data_url: str) -> tuple[str, bytes]:
-    match = re.match(r"^data:(image/(?:png|jpeg|jpg|webp));base64,(.+)$", data_url, re.DOTALL)
+    match = re.match(r"^data:([^;,]+);base64,(.+)$", data_url, re.DOTALL)
     if not match:
-        raise typed_error(422, "invalid_image", "uploaded room photo must be a PNG, JPEG, or WEBP data URL")
-    mime_type = "image/jpeg" if match.group(1) == "image/jpg" else match.group(1)
+        raise typed_error(
+            422,
+            "invalid_image",
+            "uploaded room photo must be a valid image data URL",
+        )
+
     try:
         image_bytes = base64.b64decode(match.group(2), validate=True)
     except (binascii.Error, ValueError) as exc:
-        raise typed_error(422, "invalid_image", "uploaded room photo base64 data is invalid") from exc
+        raise typed_error(
+            422,
+            "invalid_image",
+            "uploaded room photo base64 data is invalid",
+        ) from exc
+
     if len(image_bytes) > 12_000_000:
-        raise typed_error(413, "image_too_large", "uploaded room photo must be under 12MB")
-    return mime_type, image_bytes
+        raise typed_error(
+            413,
+            "image_too_large",
+            "uploaded room photo must be under 12MB",
+        )
+
+    # Verify that the bytes are actually a valid image.
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            image.verify()
+    except Exception as exc:
+        raise typed_error(
+            422,
+            "invalid_image",
+            "uploaded room photo is not a valid image",
+        ) from exc
+
+    # Re-open after verify(), since verify() invalidates the image object.
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            # Pillow has already detected the actual format from the file
+            # contents, so we don't need to trust the MIME type in the
+            # data URL.
+            image.load()
+
+            # Convert all supported image formats to RGB JPEG.
+            #
+            # This also handles images with transparency. JPEG doesn't
+            # support alpha, so composite them against a white background.
+            if image.mode in ("RGBA", "LA") or (
+                image.mode == "P" and "transparency" in image.info
+            ):
+                rgba_image = image.convert("RGBA")
+
+                background = Image.new(
+                    "RGB",
+                    rgba_image.size,
+                    (255, 255, 255),
+                )
+                background.paste(
+                    rgba_image,
+                    mask=rgba_image.getchannel("A"),
+                )
+                image = background
+            else:
+                image = image.convert("RGB")
+
+            output = io.BytesIO()
+
+            image.save(
+                output,
+                format="JPEG",
+                quality=90,
+                optimize=True,
+            )
+
+            image_bytes = output.getvalue()
+
+    except Exception as exc:
+        raise typed_error(
+            422,
+            "unsupported_image",
+            "uploaded room photo could not be converted to JPEG",
+        ) from exc
+
+    # Check the final JPEG size as well. The conversion can produce a
+    # different-sized payload than the original image.
+    if len(image_bytes) > 12_000_000:
+        raise typed_error(
+            413,
+            "image_too_large",
+            "uploaded room photo must be under 12MB after conversion",
+        )
+
+    return "image/jpeg", image_bytes
+
+
+
+
+# def image_bytes_from_data_url(data_url: str) -> tuple[str, bytes]:
+#     match = re.match(r"^data:(image/(?:png|jpeg|jpg|webp));base64,(.+)$", data_url, re.DOTALL)
+#     if not match:
+#         raise typed_error(422, "invalid_image", "uploaded room photo must be a PNG, JPEG, or WEBP data URL")
+#     mime_type = "image/jpeg" if match.group(1) == "image/jpg" else match.group(1)
+#     try:
+#         image_bytes = base64.b64decode(match.group(2), validate=True)
+#     except (binascii.Error, ValueError) as exc:
+#         raise typed_error(422, "invalid_image", "uploaded room photo base64 data is invalid") from exc
+#     if len(image_bytes) > 12_000_000:
+#         raise typed_error(413, "image_too_large", "uploaded room photo must be under 12MB")
+#     return mime_type, image_bytes
 
 
 class ImageServiceUnavailableError(RuntimeError):
@@ -1268,7 +1368,8 @@ async def edit_openai_image(prompt: str, image_references: list[tuple[str, str]]
     except httpx.RequestError as exc:
         raise ImageServiceUnavailableError("OpenAI image editing could not be reached") from exc
     if response.status_code >= 400:
-        raise typed_error(502, "image_generation_failed", "OpenAI image edit failed", error=response.text[:500])
+        # raise typed_error(502, "image_generation_failed", "OpenAI image edit failed", error=response.text[:500])
+        raise typed_error(400, "image_generation_failed", "OpenAI image edit failed. Bad Request", error=response.text[:500])
     payload = response.json()
     image_base64 = payload.get("data", [{}])[0].get("b64_json")
     return f"data:image/jpeg;base64,{image_base64}" if image_base64 else None
