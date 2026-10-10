@@ -26,6 +26,10 @@ ALLOWED_NEED_CATEGORIES = {
     "lamp",
     "mirror",
     "planter",
+    "refrigerator", 
+    "utensil", 
+    "basin", 
+    "microwave"
 }
 
 

@@ -23,6 +23,10 @@ FURNITURE_HINTS = (
     "bed",
     "dresser",
     "wardrobe",
+    "refrigerator", 
+    "utensil", 
+    "basin", 
+    "microwave"
 )
 
 

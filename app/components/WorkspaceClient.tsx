@@ -1478,6 +1478,7 @@ export function WorkspaceClient() {
                     <option value="living_room">Living room</option>
                     <option value="bedroom">Master bedroom</option>
                     <option value="study">Home office</option>
+                    <option value="kitchen">Kitchen</option>
                   </select>
                 </label>
               </div>

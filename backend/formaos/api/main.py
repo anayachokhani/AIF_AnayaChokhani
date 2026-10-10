@@ -321,6 +321,7 @@ DEMO_ROOM_CATEGORIES: dict[str, list[str]] = {
     "living_room": ["sofa", "chair", "table", "rug", "storage", "cabinet", "lamp", "mirror", "planter"],
     "bedroom": ["bed", "storage", "table", "cabinet", "rug", "lamp", "chair", "mirror", "planter"],
     "study": ["desk", "chair", "storage", "cabinet", "rug", "lamp", "table", "mirror", "planter"],
+    "kitchen": ["refrigerator", "utensil", "basin", "storage", "microwave", "lamp", "planter", "table"]
 }
 
 STYLE_PROFILES: dict[str, str] = {
@@ -1686,9 +1687,12 @@ def run_design_for_session(session_id: str, max_retries: int, design_id: str | N
         if str(exc) == "missing_api_key":
             raise typed_error(503, "missing_api_key", "planner API key is not configured on the backend") from exc
         raise typed_error(500, "graph_failure", "agent graph failed") from exc
-    except HTTPException:
+    except HTTPException as exc:
+        rich.print(f"HTTP Exception: {exc}")
         raise
     except Exception as exc:
+        print("... HERE ...")
+        rich.print(type(exc))
         rich.print(f"Exception: {exc}")
         raise typed_error(500, "graph_failure", "agent graph failed", error=exc.__class__.__name__) from exc
 
@@ -1957,7 +1961,7 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
         references.append(("selected saved design version; primary pixel-level edit target", str(previous_image)))
     if source_images:
         references.append(("original room photo; architecture and camera source of truth", source_images[0]))
-    remaining_reference_slots = max(0, 12 - len(references))    # ...
+    remaining_reference_slots = max(0, 18 - len(references))    # ...
     rich.print(f"Remaining reference slots: {remaining_reference_slots}")
     references.extend(
         product_image_references(

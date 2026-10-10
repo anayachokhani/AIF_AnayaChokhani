@@ -13,7 +13,7 @@ DEFAULT_ROOM_TYPES = {
         "width": 10.0,
         "depth": 12.0,
         "units": Units.FT,
-        "budget_inr": 85000,
+        "budget_inr": 150000,
         "style_words": ["warm", "modern"],
     },
     "bedroom": {
@@ -29,6 +29,13 @@ DEFAULT_ROOM_TYPES = {
         "units": Units.FT,
         "budget_inr": 60000,
         "style_words": ["focused", "minimal"],
+    },
+    "kitchen": {
+        "width": 10.0,
+        "depth": 10.0,
+        "units": Units.FT,
+        "budget_inr": 100000,
+        "style_words": ["modern"],
     },
 }
 

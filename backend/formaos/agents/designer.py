@@ -50,6 +50,16 @@ ROOM_DEFAULT_NEEDS: dict[str, list[dict[str, object]]] = {
         {"category": "mirror", "purpose": "wall reflection or art-like vertical element", "priority": 5, "budget_share": 0.04},
         {"category": "planter", "purpose": "desk-friendly greenery", "priority": 5, "budget_share": 0.03},
     ],
+    "kitchen": [
+        {"category": "refrigerator", "purpose": "food preservation and cooling", "priority": 1, "budget_share": 0.30},
+        {"category": "utensil", "purpose": "medium to cook and consume food", "priority": 1, "budget_share": 0.10},
+        {"category": "basin", "purpose": "cleaning and washing", "priority": 1, "budget_share": 0.08},
+        {"category": "storage", "purpose": "kitchen storage", "priority": 1, "budget_share": 0.15},
+        {"category": "microwave", "purpose": "heating and cooking", "priority": 2, "budget_share": 0.12},
+        {"category": "lamp", "purpose": "task lighting", "priority": 3, "budget_share": 0.05},
+        {"category": "planter", "purpose": "kitchen-friendly greenery", "priority": 5, "budget_share": 0.02},
+        {"category": "table", "purpose": "dining table", "priority": 5, "budget_share": 0.18}
+    ]
 }
 
 PLACEMENT_HINTS: dict[str, Direction] = {

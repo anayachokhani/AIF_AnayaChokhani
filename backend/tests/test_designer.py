@@ -150,7 +150,7 @@ def test_designer_rejects_slot_category_not_in_curated_catalogue(tmp_path: Path)
 
 def test_designer_limits_to_ten_slots_and_normalizes_budget() -> None:
     brief = create_room_brief(room_type="living room", width=12, depth=14, units="ft", budget_inr=120000)
-    categories = ["sofa", "table", "rug", "storage", "lamp", "chair", "mirror", "planter", "cabinet", "loveseat"]
+    categories = ["sofa", "table", "rug", "storage", "lamp", "chair", "mirror", "planter", "cabinet", "loveseat", "refrigerator", "utensil", "basin", "microwave"]
     planner = planner_output_for(brief, [need(category, 0.2, min(index + 1, 5)) for index, category in enumerate(categories)])
     output = design_slots(brief, planner)
     assert len(output.slots) == 10

@@ -22,6 +22,10 @@ ALLOWED_CATEGORIES = (
     "lamp",
     "mirror",
     "planter",
+    "refrigerator", 
+    "utensil", 
+    "basin", 
+    "microwave"
 )
 
 TARGET_COUNTS = {category: 15 for category in ALLOWED_CATEGORIES}

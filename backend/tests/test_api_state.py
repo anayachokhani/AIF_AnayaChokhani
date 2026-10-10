@@ -46,6 +46,7 @@ def planner_payload(brief, categories: list[str] | None = None) -> dict:
         categories = {
             "bedroom": ["bed", "storage", "table", "rug", "lamp", "chair", "mirror", "planter"],
             "study": ["desk", "chair", "storage", "rug", "lamp", "table", "mirror", "planter"],
+            "kitchen": ["refrigerator", "utensil", "basin", "storage", "microwave", "lamp", "planter", "table"]
         }.get(brief.room_type, ["sofa", "chair", "table", "rug", "storage", "lamp", "mirror", "planter"])
     share = round(1 / len(categories), 4)
     return {

@@ -32,6 +32,10 @@ ALLOWED_OBJECT_CLASSES = {
     "stove",
     "table",
     "water_feature",
+    "refrigerator", 
+    "utensil", 
+    "basin", 
+    "microwave"
 }
 ALLOWED_COLOR_PATTERN = re.compile(r"^[a-z][a-z ]*$")
 REQUIRED_RULE_FIELDS = [

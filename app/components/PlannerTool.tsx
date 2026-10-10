@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { formatCurrency, products } from "../data";
 
-const requiredCategories = ["Sofa", "Coffee table", "Rug", "Storage", "Lighting"];
+const requiredCategories = ["Sofa", "Coffee table", "Rug", "Storage", "Lighting"];  ////
 const directionOptions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"];
 const unitOptions = {
   cm: { label: "cm", minWidth: 240, maxWidth: 520, minDepth: 260, maxDepth: 620, step: 10 },
@@ -145,6 +145,7 @@ export function PlannerTool() {
             <option value="living_room">Living room</option>
             <option value="bedroom">Bedroom</option>
             <option value="study">Study</option>
+            <option value="kitchen">Kitchen</option>
           </select>
         </label>
         <label>
