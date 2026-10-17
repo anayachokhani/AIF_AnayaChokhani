@@ -6679,3 +6679,25 @@ body:has(.ys-landing) .site-header {
     grid-template-columns: 1fr;
   }
 }
+
+.marble-world-panel {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #d9dfd5;
+  border-radius: 16px;
+  background: #f6f8f2;
+}
+.marble-world-panel h3 { margin: 4px 0 0; }
+.marble-world-panel > p { line-height: 1.6; }
+.marble-world-panel .studio-action-row { flex-wrap: wrap; }
+.marble-world-panel [role="alert"] { color: #922f23; }
+.marble-world-note { color: #59665d; font-size: 13px; }
+.marble-world-viewer {
+  display: block;
+  width: 100%;
+  height: clamp(320px, 55vh, 620px);
+  border: 0;
+  border-radius: 12px;
+  margin-top: 16px;
+  background: #1d2421;
+}

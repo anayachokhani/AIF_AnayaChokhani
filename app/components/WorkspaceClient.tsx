@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../data";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
+import { MarbleWorldPanel } from "./MarbleWorldPanel";
 import { ZoneGrid, type ZoneGridItem } from "./ZoneGrid";
 import { clonePageVaryPathWithNewSearchParams } from "next/dist/client/components/segment-cache/vary-path";
 
@@ -1737,6 +1738,15 @@ export function WorkspaceClient() {
                   </div>
                 </> : null}
               {!conceptLoading && displayedConcept && !displayedConcept.image_data_url ? <pre>{displayedConcept.image_prompt}</pre> : null}
+              {!conceptLoading && design && displayedConcept?.image_data_url ? (
+                <MarbleWorldPanel
+                  key={`${design.design_id}:${displayedConcept.image_data_url}`}
+                  designId={design.design_id}
+                  imageDataUrl={displayedConcept.image_data_url}
+                  displayName={projectName}
+                  apiBase={API_BASE}
+                />
+              ) : null}
               {design ? (
                 <div className="design-intelligence-strip" aria-label="Design summary">
                   <div className="design-palette-summary">

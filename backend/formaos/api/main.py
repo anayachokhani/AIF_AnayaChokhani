@@ -28,6 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from formaos.api.marble import create_marble_router
 from formaos.agents.graph_loop import AgentLoopResult, run_agent_loop
 from formaos.agents.critic import critique_design
 from formaos.agents.grounder import ground_design
@@ -2285,3 +2286,19 @@ def export_design_image(
             "X-Design-Revision": revision_id,
         },
     )
+
+# Marble jobs live alongside their saved design and use the same account ownership checks.
+
+def marble_owned_design(design_id: str, request: Request) -> dict[str, Any]:
+    user = request_user(request)
+    design = design_store.get(design_id)
+    if design is None:
+        raise typed_error(404, "not_found", "design not found")
+    assert_design_owner(design, user)
+    return deepcopy(design)
+
+
+app.include_router(create_marble_router(
+    marble_owned_design,
+    lambda design_id, design: design_store.save(design_id, design),
+))

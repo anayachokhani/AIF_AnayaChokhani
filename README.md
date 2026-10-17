@@ -47,6 +47,17 @@ npm run dev
 
 Then open the local URL printed by the development server.
 
+`npm run dev` uses the Next.js development server on Windows and macOS.
+The frontend calls the Python
+backend below and needs no local Workers bindings. Use `npm run dev:cloudflare`
+to test with vinext and Cloudflare Workers. Deployment builds still use vinext
+and target Cloudflare.
+
+On Windows, install Node.js and run `npm ci` in this checkout rather than copying
+`node_modules` or `.tools` from a Mac: these contain platform-specific binaries.
+If Worker mode fails at startup with `fetch failed`, `ECONNRESET`, or a timeout,
+use `npm run dev` for local app development.
+
 ## Backend
 
 ```bash
@@ -161,3 +172,29 @@ uv run python backend/formaos/catalogue/index_catalogue.py --catalogue data/cura
 - `backend/formaos/vastu/schema.py` - Pydantic schema and generator for opt-in Vastu seed rules
 - `backend/formaos/vastu/checker.py` - deterministic Vastu scorer with per-item badges and repair notes
 - `data/vastu/seeds.csv` and `data/vastu/vastu_rules_v1.json` - manually curated Vastu MVP seed rules
+
+## Explorable interior worlds (Marble)
+
+Set `WORLDLABS_MARBLE_API_KEY` in the backend's `.env` and restart the Python
+server. In Workspace, generate a concept image, then click **Create 3D world**.
+The selected `displayedConcept.image_data_url` is sent to the backend, validated
+against that saved design, and submitted as base64 image input to Marble with a
+prompt to reconstruct the interior as an explorable world. Generation uses your
+World Labs API credits and starts only when you click the button.
+
+The backend endpoints are `POST /api/design/{design_id}/worlds` (start/reuse a job)
+and `GET /api/design/{design_id}/worlds/{image_hash}` (poll/load the result). Jobs
+are saved per image with the design, so reopening it resumes generation and each
+image revision has its own world. The key stays on the server. Worlds are created
+with `permission.public=false`.
+
+The workspace renders returned SPZ assets in an interactive Spark viewer with
+keyboard movement, mouse/touch looking, reset and fullscreen controls. It requires
+WebGL and access to the pinned Three.js/Spark CDN modules and World Labs asset URLs.
+Reloading the view refreshes asset URLs; **Open in Marble** is also available and
+may require signing in with the generating World Labs account. A world is an AI
+reconstruction of an image, not a dimensionally validated room model.
+
+References: [World generation API](https://docs.worldlabs.ai/api/reference/worlds/generate),
+[World assets](https://docs.worldlabs.ai/api/reference/worlds/get), and
+[SPZ rendering conventions](https://docs.worldlabs.ai/api/rendering-spz).

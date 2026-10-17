@@ -1,0 +1,22 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Explore your interior</title>
+  <style>
+    html,body { margin:0; height:100%; overflow:hidden; background:#1d2421; color:#fff; font:14px system-ui,sans-serif; }
+    canvas { width:100%; height:100%; display:block; touch-action:none; outline:none; }
+    #status { position:absolute; top:16px; left:16px; right:16px; padding:12px; background:#18201ee6; border-radius:10px; pointer-events:none; }
+    #actions { position:absolute; bottom:16px; right:16px; display:flex; gap:8px; }
+    button { border:0; border-radius:8px; padding:10px 14px; background:#fff; color:#1d2421; cursor:pointer; }
+  </style>
+  <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js","@sparkjsdev/spark":"https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"}}</script>
+</head>
+<body>
+  <canvas id="world" tabindex="0" aria-label="3D room. Drag to look; use W A S D to move and Q E for height."></canvas>
+  <p id="status" role="status">Loading your 3D room...</p>
+  <div id="actions"><button id="reset" type="button">Reset view</button><button id="fullscreen" type="button">Fullscreen</button></div>
+  <script type="module" src="/world-viewer.js"></script>
+</body>
+</html>
