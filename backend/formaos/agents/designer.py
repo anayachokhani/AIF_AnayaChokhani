@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
+from formaos.definitions import PLACEMENT_HINTS, ROOM_DEFAULT_NEEDS, ROOM_FOOTPRINT_OVERRIDES, ROOM_PLACEMENT_OVERRIDES, category_footprints
 from formaos.agents.planner import ALLOWED_NEED_CATEGORIES, PlannerNeed, PlannerOutput
 from formaos.contracts import DesignSlot, Direction, RoomBrief
 from formaos.room_state import brief_dimensions_cm
@@ -16,66 +17,7 @@ DEFAULT_CATALOGUE_PATH = Path("data/curated/abo_mvp_catalogue_with_images.csv")
 MIN_SLOT_COUNT = 4
 MAX_SLOT_COUNT = 10
 
-ROOM_DEFAULT_NEEDS: dict[str, list[dict[str, object]]] = {
-    "living_room": [
-        {"category": "sofa", "purpose": "primary seating matched to the selected style", "priority": 1, "budget_share": 0.5},
-        {"category": "chair", "purpose": "accent seating or reading chair", "priority": 2, "budget_share": 0.11},
-        {"category": "table", "purpose": "coffee or side surface", "priority": 2, "budget_share": 0.12},
-        {"category": "rug", "purpose": "soft zone and visual anchor", "priority": 3, "budget_share": 0.1},
-        {"category": "storage", "purpose": "closed storage or media console", "priority": 3, "budget_share": 0.13},
-        {"category": "cabinet", "purpose": "display cabinet or concealed storage", "priority": 4, "budget_share": 0.1},
-        {"category": "lamp", "purpose": "warm layered lighting", "priority": 4, "budget_share": 0.06},
-        {"category": "mirror", "purpose": "wall reflection or art-like vertical element", "priority": 5, "budget_share": 0.04},
-        {"category": "planter", "purpose": "greenery and natural styling", "priority": 5, "budget_share": 0.03},
-    ],
-    "bedroom": [
-        {"category": "bed", "purpose": "sleeping zone matched to the selected style", "priority": 1, "budget_share": 0.38},
-        {"category": "storage", "purpose": "wardrobe or drawer storage", "priority": 2, "budget_share": 0.2},
-        {"category": "table", "purpose": "bedside surface", "priority": 2, "budget_share": 0.08},
-        {"category": "cabinet", "purpose": "secondary storage or display", "priority": 3, "budget_share": 0.1},
-        {"category": "rug", "purpose": "soft landing beside the bed", "priority": 3, "budget_share": 0.08},
-        {"category": "lamp", "purpose": "bedside lighting", "priority": 4, "budget_share": 0.06},
-        {"category": "chair", "purpose": "reading or dressing chair", "priority": 4, "budget_share": 0.07},
-        {"category": "mirror", "purpose": "dressing mirror or wall reflection", "priority": 5, "budget_share": 0.04},
-        {"category": "planter", "purpose": "low-maintenance greenery", "priority": 5, "budget_share": 0.03},
-    ],
-    "study": [
-        {"category": "desk", "purpose": "work surface matched to the selected style", "priority": 1, "budget_share": 0.3},
-        {"category": "chair", "purpose": "ergonomic seating", "priority": 2, "budget_share": 0.18},
-        {"category": "storage", "purpose": "document and object storage", "priority": 2, "budget_share": 0.15},
-        {"category": "cabinet", "purpose": "closed storage or display", "priority": 3, "budget_share": 0.12},
-        {"category": "rug", "purpose": "acoustic softness and visual anchor", "priority": 3, "budget_share": 0.08},
-        {"category": "lamp", "purpose": "task lighting", "priority": 4, "budget_share": 0.06},
-        {"category": "table", "purpose": "printer, side, or reading surface", "priority": 4, "budget_share": 0.06},
-        {"category": "mirror", "purpose": "wall reflection or art-like vertical element", "priority": 5, "budget_share": 0.04},
-        {"category": "planter", "purpose": "desk-friendly greenery", "priority": 5, "budget_share": 0.03},
-    ],
-    "kitchen": [
-        {"category": "refrigerator", "purpose": "food preservation and cooling", "priority": 1, "budget_share": 0.30},
-        {"category": "utensil", "purpose": "medium to cook and consume food", "priority": 1, "budget_share": 0.10},
-        {"category": "basin", "purpose": "cleaning and washing", "priority": 1, "budget_share": 0.08},
-        {"category": "storage", "purpose": "kitchen storage", "priority": 1, "budget_share": 0.15},
-        {"category": "microwave", "purpose": "heating and cooking", "priority": 2, "budget_share": 0.12},
-        {"category": "lamp", "purpose": "task lighting", "priority": 3, "budget_share": 0.05},
-        {"category": "planter", "purpose": "kitchen-friendly greenery", "priority": 5, "budget_share": 0.02},
-        {"category": "table", "purpose": "dining table", "priority": 5, "budget_share": 0.18}
-    ]
-}
 
-PLACEMENT_HINTS: dict[str, Direction] = {
-    "sofa": "S",
-    "loveseat": "S",
-    "bed": "SW",
-    "cabinet": "W",
-    "storage": "W",
-    "table": "C",
-    "desk": "E",
-    "chair": "E",
-    "rug": "C",
-    "lamp": "SE",
-    "mirror": "N",
-    "planter": "NE",
-}
 VASTU_RULE_PATH = Path("data/vastu/vastu_rules_v1.json")
 VASTU_SEVERITY_ORDER = {"critical": 0, "warn": 1, "info": 2}
 
@@ -111,7 +53,7 @@ def planner_need_from_default(default: dict[str, object], brief: RoomBrief) -> P
     return PlannerNeed(
         category=str(default["category"]),
         purpose=str(default["purpose"]),
-        quantity=1,
+        quantity=int(default.get("quantity", 1)),
         priority=int(default["priority"]),
         budget_share=float(default["budget_share"]),
         style_tags=brief.style_words,
@@ -137,6 +79,8 @@ def validate_designer_inputs(brief: RoomBrief | dict[str, Any], planner_output: 
         mismatches.append("room_type")
     if facts.width_cm != dims.width_cm or facts.depth_cm != dims.depth_cm:
         mismatches.append("room_dimensions")
+    if valid_brief.height is not None and facts.height_cm != dims.height_cm:
+        mismatches.append("room_height")
     if facts.budget_inr != valid_brief.budget_inr:
         mismatches.append("budget")
     if facts.style_words != valid_brief.style_words:
@@ -180,21 +124,9 @@ def normalize_budget_shares(needs: list[PlannerNeed]) -> list[float]:
 
 def footprint_for_need(brief: RoomBrief, need: PlannerNeed) -> tuple[float, float]:
     dims = brief_dimensions_cm(brief)
-    category_defaults = {
-        "sofa": (min(dims.width_cm * 0.68, 230), min(dims.depth_cm * 0.36, 105)),
-        "loveseat": (min(dims.width_cm * 0.55, 190), min(dims.depth_cm * 0.34, 100)),
-        "bed": (min(dims.width_cm * 0.85, 220), min(dims.depth_cm * 0.82, 220)),
-        "cabinet": (min(dims.width_cm * 0.45, 140), min(dims.depth_cm * 0.22, 60)),
-        "storage": (min(dims.width_cm * 0.5, 160), min(dims.depth_cm * 0.24, 65)),
-        "table": (min(dims.width_cm * 0.42, 130), min(dims.depth_cm * 0.28, 90)),
-        "desk": (min(dims.width_cm * 0.65, 160), min(dims.depth_cm * 0.3, 80)),
-        "chair": (min(dims.width_cm * 0.32, 90), min(dims.depth_cm * 0.32, 95)),
-        "rug": (min(dims.width_cm * 0.78, 300), min(dims.depth_cm * 0.62, 300)),
-        "lamp": (45.0, 45.0),
-        "mirror": (min(dims.width_cm * 0.28, 90), 10.0),
-        "planter": (45.0, 45.0),
-    }
-    default_width, default_depth = category_defaults[need.category]
+    override = ROOM_FOOTPRINT_OVERRIDES.get((brief.room_type, need.category))
+    default_width, default_depth = (override(dims.width_cm, dims.depth_cm) if override
+                                    else category_footprints(dims.width_cm, dims.depth_cm)[need.category])
     return (
         round(min(need.max_width_cm or default_width, default_width), 1),
         round(min(need.max_depth_cm or default_depth, default_depth), 1),
@@ -212,7 +144,7 @@ def style_text_for(brief: RoomBrief, need: PlannerNeed) -> str:
 
 
 def placement_hint_for(brief: RoomBrief, category: str) -> Direction | None:
-    fallback = PLACEMENT_HINTS.get(category)
+    fallback = ROOM_PLACEMENT_OVERRIDES.get((brief.room_type, category), PLACEMENT_HINTS.get(category))
     if not brief.vastu_enabled:
         return fallback
     try:
@@ -285,6 +217,11 @@ def design_slots(
         )
 
     catalogue_categories = load_catalogue_categories(catalogue_path)
+    # The bundled catalogue is incomplete. Keep supported planning categories;
+    # grounding reports missing products as category_unavailable. Explicit custom
+    # catalogues retain their strict validation contract.
+    if catalogue_path == DEFAULT_CATALOGUE_PATH:
+        catalogue_categories |= set(ALLOWED_NEED_CATEGORIES)
     validate_categories(slots, catalogue_categories)
     concept_prompt = build_concept_prompt(brief, slots) if include_concept_prompt else None
     try:

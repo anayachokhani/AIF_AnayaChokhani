@@ -5078,6 +5078,7 @@ body:has(.ys-landing) .site-header {
 }
 
 .ys-form-grid label {
+  min-width: 0;
   position: relative;
   display: grid;
   gap: 8px;
@@ -5089,6 +5090,9 @@ body:has(.ys-landing) .site-header {
 .ys-form-grid input,
 .ys-form-grid select,
 .studio-action-row input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   min-height: 48px;
   padding: 0 14px;
   border: 1px solid var(--ys-line);
@@ -5103,6 +5107,42 @@ body:has(.ys-landing) .site-header {
   right: 12px;
   bottom: 14px;
   color: var(--ys-muted);
+}
+
+
+.ys-form-grid .ys-dimension-field {
+  align-content: start;
+}
+
+.ys-dimension-input {
+  position: relative;
+  min-width: 0;
+}
+
+.ys-dimension-input input {
+  padding-right: 64px;
+}
+
+.ys-form-grid .ys-dimension-input span {
+  top: 50%;
+  right: 34px;
+  bottom: auto;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.ys-form-grid input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.ys-form-grid .ys-dimension-error,
+.room-dimension-error {
+  position: static;
+  color: #b42318;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .ys-style-grid {

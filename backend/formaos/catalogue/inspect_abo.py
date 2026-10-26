@@ -6,28 +6,7 @@ import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
-
-
-FURNITURE_HINTS = (
-    "sofa",
-    "loveseat",
-    "chair",
-    "table",
-    "desk",
-    "cabinet",
-    "storage",
-    "shelf",
-    "rug",
-    "lamp",
-    "mirror",
-    "bed",
-    "dresser",
-    "wardrobe",
-    "refrigerator", 
-    "utensil", 
-    "basin", 
-    "microwave"
-)
+from formaos.definitions import FURNITURE_HINTS
 
 
 def iter_json_records(root: Path):

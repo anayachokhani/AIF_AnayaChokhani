@@ -7,36 +7,21 @@ from typing import Any, Protocol
 import httpx
 from pydantic import BaseModel, Field, ValidationError
 
+from formaos.definitions import ROOM_DEFAULT_NEEDS, ROOM_DESIGN_GUIDANCE
+from formaos.definitions import SUPPORTED_CATEGORIES as ALLOWED_NEED_CATEGORIES
 from formaos.contracts import RoomBrief
 from formaos.room_state import brief_dimensions_cm
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-4.1-mini"
-ALLOWED_NEED_CATEGORIES = {
-    "sofa",
-    "loveseat",
-    "bed",
-    "cabinet",
-    "storage",
-    "table",
-    "desk",
-    "chair",
-    "rug",
-    "lamp",
-    "mirror",
-    "planter",
-    "refrigerator", 
-    "utensil", 
-    "basin", 
-    "microwave"
-}
 
 
 class RoomFacts(BaseModel):
     room_type: str
     width_cm: float = Field(..., gt=0)
     depth_cm: float = Field(..., gt=0)
+    height_cm: float | None = Field(default=None, gt=0)
     budget_inr: int = Field(..., gt=0)
     style_words: list[str] = Field(default_factory=list)
 
@@ -119,19 +104,22 @@ class OpenRouterPlannerClient:
 
 def build_planner_prompt(brief: RoomBrief, validation_error: str | None = None) -> list[dict[str, str]]:
     dims = brief_dimensions_cm(brief)
+    defaults = ROOM_DEFAULT_NEEDS.get(brief.room_type, ROOM_DEFAULT_NEEDS["living_room"])
+    primary = defaults[0]
     schema_hint = {
         "room_facts": {
             "room_type": brief.room_type,
             "width_cm": dims.width_cm,
             "depth_cm": dims.depth_cm,
+            "height_cm": dims.height_cm,
             "budget_inr": brief.budget_inr,
             "style_words": brief.style_words,
         },
         "constraints": brief.constraints,
         "needs_list": [
             {
-                "category": "sofa",
-                "purpose": "primary seating",
+                "category": primary["category"],
+                "purpose": primary["purpose"],
                 "quantity": 1,
                 "priority": 1,
                 "max_width_cm": 220,
@@ -146,9 +134,12 @@ def build_planner_prompt(brief: RoomBrief, validation_error: str | None = None) 
     system = (
         "You are the FormaOS Planner node. Return only strict JSON. "
         "Preserve the room facts, budget, style words, and constraints exactly. "
+        "Treat the centimeter room envelope as fixed. Specify actual furniture sizes that leave circulation and access space; reduce the number or size of optional pieces in small rooms. Never enlarge the room or shrink products to make them fit. "
         "Create a practical 6 to 10 item furniture and decor needs list for later retrieval. "
         "Include the main furniture plus supporting pieces such as accent seating, storage, rug, lighting, mirror, and planter when appropriate. "
         "Use style_tags and purpose text to distinguish design styles through material, silhouette, palette, and decor cues. "
+        f"{ROOM_DESIGN_GUIDANCE.get(brief.room_type, '')} "
+        f"Typical needs for this room: {json.dumps(defaults)}. "
         f"Allowed categories: {', '.join(sorted(ALLOWED_NEED_CATEGORIES))}."
     )
     user = (
@@ -181,6 +172,8 @@ def validate_preserves_brief(output: PlannerOutput, brief: RoomBrief) -> Planner
         errors.append("room_type changed")
     if facts.width_cm != dims.width_cm or facts.depth_cm != dims.depth_cm:
         errors.append("room dimensions changed")
+    if brief.height is not None and facts.height_cm != dims.height_cm:
+        errors.append("room height changed")
     if facts.budget_inr != brief.budget_inr:
         errors.append("budget changed")
     if facts.style_words != brief.style_words:

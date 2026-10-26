@@ -5,44 +5,14 @@ from typing import Any, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
 
+from formaos.definitions import DEFAULT_ROOM_TYPES, ROOM_TYPE_ALIASES
 from formaos.contracts import Direction, GroundedDesign, ResponseState, RoomBrief, Units
-
-
-DEFAULT_ROOM_TYPES = {
-    "living_room": {
-        "width": 10.0,
-        "depth": 12.0,
-        "units": Units.FT,
-        "budget_inr": 150000,
-        "style_words": ["warm", "modern"],
-    },
-    "bedroom": {
-        "width": 10.0,
-        "depth": 11.0,
-        "units": Units.FT,
-        "budget_inr": 90000,
-        "style_words": ["calm", "storage"],
-    },
-    "study": {
-        "width": 8.0,
-        "depth": 10.0,
-        "units": Units.FT,
-        "budget_inr": 60000,
-        "style_words": ["focused", "minimal"],
-    },
-    "kitchen": {
-        "width": 10.0,
-        "depth": 10.0,
-        "units": Units.FT,
-        "budget_inr": 100000,
-        "style_words": ["modern"],
-    },
-}
 
 
 class RoomDimensionsCm(BaseModel):
     width_cm: float = Field(..., gt=0)
     depth_cm: float = Field(..., gt=0)
+    height_cm: float | None = Field(default=None, gt=0)
 
 
 class FormaOSState(BaseModel):
@@ -68,10 +38,9 @@ class FormaOSGraphState(TypedDict):
 def normalize_room_type(room_type: str | None) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "_", (room_type or "living_room").strip().lower())
     normalized = normalized.strip("_")
-    if normalized in {"living", "livingroom", "hall"}:
-        return "living_room"
-    if normalized in {"bed", "master_bedroom"}:
-        return "bedroom"
+    for canonical, aliases in ROOM_TYPE_ALIASES.items():
+        if normalized == canonical or normalized in {alias.replace(" ", "_") for alias in aliases}:
+            return canonical
     return normalized or "living_room"
 
 
@@ -89,6 +58,7 @@ def brief_dimensions_cm(brief: RoomBrief) -> RoomDimensionsCm:
     return RoomDimensionsCm(
         width_cm=dimension_to_cm(brief.width, brief.units),
         depth_cm=dimension_to_cm(brief.depth, brief.units),
+        height_cm=dimension_to_cm(brief.height, brief.units) if brief.height is not None else None,
     )
 
 
@@ -103,10 +73,10 @@ def split_words(value: str | list[str] | None) -> list[str]:
 def parse_room_brief_text(text: str) -> dict[str, Any]:
     normalized = text.lower()
     room_type = "living_room"
-    if "bedroom" in normalized:
-        room_type = "bedroom"
-    elif "study" in normalized or "office" in normalized:
-        room_type = "study"
+    for canonical, aliases in ROOM_TYPE_ALIASES.items():
+        if any(re.search(r"\b" + re.escape(alias) + r"\b", normalized.replace("_", " ")) for alias in aliases):
+            room_type = canonical
+            break
 
     units = "ft" if re.search(r"\b(ft|feet|foot)\b", normalized) else None
     dimension_match = re.search(
@@ -124,7 +94,7 @@ def parse_room_brief_text(text: str) -> dict[str, Any]:
 
     style_text = re.sub(r"(\d+(?:\.\d+)?)\s*(?:by|x|×)\s*(\d+(?:\.\d+)?)\s*(ft|feet|foot|cm|m)?", " ", normalized)
     style_text = re.sub(r"(?:rs|inr|₹)\s*[0-9][0-9,]*", " ", style_text)
-    style_text = re.sub(r"\b(living room|bedroom|study|office|room|ft|feet|foot|cm|m)\b", " ", style_text)
+    style_text = re.sub(r"\b(living room|master bedroom|bedroom|study|office|kitchen|bathroom|bath room|washroom|restroom|dining room|dining area|dining|room|ft|feet|foot|cm|m)\b", " ", style_text)
     style_words = split_words(style_text)
 
     constraints = []
@@ -149,6 +119,7 @@ def create_room_brief(
     room_type: str | None = None,
     width: float | None = None,
     depth: float | None = None,
+    height: float | None = None,
     units: str | Units | None = None,
     budget_inr: int | None = None,
     style_words: str | list[str] | None = None,
@@ -165,6 +136,7 @@ def create_room_brief(
         width=width if width is not None else float(defaults["width"]),
         depth=depth if depth is not None else float(defaults["depth"]),
         units=resolved_units,
+        height=height,
         budget_inr=budget_inr if budget_inr is not None else int(defaults["budget_inr"]),
         style_words=split_words(style_words) or list(defaults["style_words"]),
         constraints=split_words(constraints),

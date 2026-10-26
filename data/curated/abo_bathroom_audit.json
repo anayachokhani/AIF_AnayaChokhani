@@ -1,0 +1,1194 @@
+{
+  "records_scanned": 147702,
+  "counts_by_title_keyword": {
+    "toilet": 151,
+    "mirror": 209,
+    "shower": 168,
+    "vanity": 61,
+    "bathroom_light": 40,
+    "towel_rack": 42,
+    "basin": 20
+  },
+  "product_types_by_keyword": {
+    "toilet": {
+      "TOILET_PAPER_HOLDER": 43,
+      "AREA_DEODORIZER": 1,
+      "TOOLS": 9,
+      "HEALTH_PERSONAL_CARE": 21,
+      "HARDWARE_HANDLE": 3,
+      "HOME": 5,
+      "PET_SUPPLIES": 2,
+      "PLUMBING_FIXTURE": 5,
+      "PANTRY": 3,
+      "BISS": 2,
+      "CLEANING_AGENT": 10,
+      "HARDWARE": 3,
+      "HOME_FURNITURE_AND_DECOR": 1,
+      "JANITORIAL_SUPPLY": 14,
+      "TOILET_SEAT": 11,
+      "CLEANING_BRUSH": 7,
+      "SKIN_CLEANING_WIPE": 2,
+      "GROCERY": 4,
+      "PAPER_TOWEL_HOLDER": 1,
+      "ABIS_DRUGSTORE": 1,
+      "SHOWERHEAD": 1,
+      "STORAGE_HOOK": 1,
+      "SHELF": 1
+    },
+    "mirror": {
+      "SHOES": 13,
+      "HOME_FURNITURE_AND_DECOR": 16,
+      "HOME": 45,
+      "SANDAL": 3,
+      "HOME_MIRROR": 105,
+      "BED": 2,
+      "TABLE": 3,
+      "CABINET": 5,
+      "WRITING_BOARD": 1,
+      "HARDWARE": 2,
+      "LIGHT_FIXTURE": 3,
+      "SAFETY_GLASSES": 3,
+      "VEHICLE_MIRROR": 3,
+      "WALL_ART": 1,
+      "KITCHEN": 1,
+      "JEWELRY_STORAGE": 1,
+      "LICENSE_PLATE_ATTACHMENT": 1,
+      "AUTO_ACCESSORY": 1
+    },
+    "shower": {
+      "PLUMBING_FIXTURE": 11,
+      "SPEAKERS": 3,
+      "HOME_BED_AND_BATH": 55,
+      "HOME": 27,
+      "BEAUTY": 15,
+      "TOOLS": 8,
+      "HOME_FURNITURE_AND_DECOR": 6,
+      "GROCERY": 5,
+      "SHOWERHEAD": 8,
+      "STORAGE_HOOK": 3,
+      "LUGGAGE": 1,
+      "SHELF": 6,
+      "COSMETIC_CASE": 2,
+      "SKIN_CLEANING_AGENT": 13,
+      "BASKET": 1,
+      "RAZOR_BLADE_CARTRIDGE": 1,
+      "OUTDOOR_LIVING": 1,
+      "CLEANING_AGENT": 1,
+      "BABY_PRODUCT": 1
+    },
+    "vanity": {
+      "LIGHT_FIXTURE": 39,
+      "HOME_FURNITURE_AND_DECOR": 12,
+      "HOME_LIGHTING_AND_LAMPS": 1,
+      "HOME": 6,
+      "CLEANING_BRUSH": 1,
+      "TOOLS": 1,
+      "HOME_MIRROR": 1
+    },
+    "bathroom_light": {
+      "LIGHT_FIXTURE": 38,
+      "HOME_LIGHTING_AND_LAMPS": 1,
+      "HOME_FURNITURE_AND_DECOR": 1
+    },
+    "towel_rack": {
+      "TOOLS": 4,
+      "STORAGE_HOOK": 4,
+      "TOWEL_HOLDER": 24,
+      "HOME_BED_AND_BATH": 2,
+      "HOME": 1,
+      "PLUMBING_FIXTURE": 5,
+      "PAPER_TOWEL_HOLDER": 2
+    },
+    "basin": {
+      "GROCERY": 1,
+      "PLUMBING_FIXTURE": 4,
+      "DRYING_RACK": 2,
+      "HOME_FURNITURE_AND_DECOR": 3,
+      "WATER_PURIFICATION_UNIT": 2,
+      "TOOLS": 4,
+      "BASKET": 1,
+      "HOME": 1,
+      "KITCHEN": 1,
+      "FAUCET": 1
+    }
+  },
+  "examples": {
+    "toilet": [
+      {
+        "id": "B07765Z6S4",
+        "title": "AmazonBasics Modern Euro Toilet Paper Holder - Satin Nickel",
+        "types": [
+          "TOILET_PAPER_HOLDER"
+        ],
+        "image_id": "71ASEq6croL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 2.3
+            },
+            "unit": "inches",
+            "value": 2.3
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 6.6
+            },
+            "unit": "inches",
+            "value": 6.6
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.1
+            },
+            "unit": "inches",
+            "value": 5.1
+          }
+        }
+      },
+      {
+        "id": "B07D5NH14Z",
+        "title": "Dr.Doody Toilet Spray, Variety Pack, 1.8 Fluid Ounce, 3 Count",
+        "types": [
+          "AREA_DEODORIZER"
+        ],
+        "image_id": "716lPmGyW3L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.67
+            },
+            "unit": "inches",
+            "value": 5.67
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.04
+            },
+            "unit": "inches",
+            "value": 5.04
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 1.42
+            },
+            "unit": "inches",
+            "value": 1.42
+          }
+        }
+      },
+      {
+        "id": "B07JW71SJY",
+        "title": "AmazonBasics Matte Bathroom Accessory Collection - Toilet Paper Holder",
+        "types": [
+          "TOILET_PAPER_HOLDER"
+        ],
+        "image_id": "71BqUyZ6rkL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 19.75
+            },
+            "unit": "inches",
+            "value": 19.75
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 6.3
+            },
+            "unit": "inches",
+            "value": 6.3
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 6.3
+            },
+            "unit": "inches",
+            "value": 6.3
+          }
+        }
+      },
+      {
+        "id": "B07WCG73NZ",
+        "title": "Umi 4-Piece Bathroom Hardware Set, Wall Mounted Stainless Steel Bathroom Accessory Brushed Nickel,Single Towel Bar Rail, Towel Ring,Toilet Roll Holder, Robe Hook Combo kit",
+        "types": [
+          "TOOLS"
+        ],
+        "image_id": "519y7pNAXqL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.17
+            },
+            "unit": "inches",
+            "value": 3.17
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.95
+            },
+            "unit": "inches",
+            "value": 5.95
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 24.21
+            },
+            "unit": "inches",
+            "value": 24.21
+          }
+        }
+      },
+      {
+        "id": "B07GFC415N",
+        "title": "Umi. Essentials papierhouder toiletpapierhouder roestvrij staal kloppapierhouder papierrolhouder toilet houder klorolhouder met plank",
+        "types": [
+          "TOOLS"
+        ],
+        "image_id": "412RAbF30aL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3
+            },
+            "unit": "inches",
+            "value": 3
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8
+            },
+            "unit": "inches",
+            "value": 8
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5
+            },
+            "unit": "inches",
+            "value": 5
+          }
+        }
+      },
+      {
+        "id": "B088XXNCMB",
+        "title": "AmazonBasics Toilet Paper Holder - Modern, 1-Piece, Black",
+        "types": [
+          "TOILET_PAPER_HOLDER"
+        ],
+        "image_id": "61OnkGVhMWL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 2.29
+            },
+            "unit": "inches",
+            "value": 2.29
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8.94
+            },
+            "unit": "inches",
+            "value": 8.94
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.08
+            },
+            "unit": "inches",
+            "value": 3.08
+          }
+        }
+      }
+    ],
+    "mirror": [
+      {
+        "id": "B01MTEIBYL",
+        "title": "The Fix Amazon Brand Women's Bond Studded Block Heel Dress Sandal,Matte Silver Mirror,10 B US",
+        "types": [
+          "SHOES"
+        ],
+        "image_id": "81cKm0WAVPL",
+        "dimensions": null
+      },
+      {
+        "id": "B07T61G2WF",
+        "title": "AmazonBasics Vanity Mirror with Heavy Base",
+        "types": [
+          "HOME_FURNITURE_AND_DECOR"
+        ],
+        "image_id": "61H86gf2vlL",
+        "dimensions": null
+      },
+      {
+        "id": "B07T3SQM7W",
+        "title": "AmazonBasics Vanity Mirror with Dual Trays",
+        "types": [
+          "HOME_FURNITURE_AND_DECOR"
+        ],
+        "image_id": "61QyU34m+JL",
+        "dimensions": null
+      },
+      {
+        "id": "B071NHXGFY",
+        "title": "Amazon Brand \u2013 Rivet Round Glass Hanging Wall Mirror, 30 Inch Height, Silver Finish",
+        "types": [
+          "HOME"
+        ],
+        "image_id": "81rXhZIiDvL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 1.0
+            },
+            "unit": "inches",
+            "value": 1.0
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 29.0
+            },
+            "unit": "inches",
+            "value": 29.0
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 23.5
+            },
+            "unit": "inches",
+            "value": 23.5
+          }
+        }
+      },
+      {
+        "id": "B078B2GXF9",
+        "title": "Amazon Brand - 206 Collective Women's Eve Stiletto Heel Dress Sandal-Low Heeled, silver mirror leather, 7 B US",
+        "types": [
+          "SANDAL"
+        ],
+        "image_id": "71s74jhy2KL",
+        "dimensions": null
+      },
+      {
+        "id": "B073WH6N3R",
+        "title": "Amazon Brand \u2013 Stone & Beam Vintage-Look Square Hanging Wall Mirror, 39.5 Inch Height, Tan and White",
+        "types": [
+          "HOME_MIRROR"
+        ],
+        "image_id": "A1Jj90-Rb9L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 31.5
+            },
+            "unit": "inches",
+            "value": 31.5
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 31.5
+            },
+            "unit": "inches",
+            "value": 31.5
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 2.5
+            },
+            "unit": "inches",
+            "value": 2.5
+          }
+        }
+      }
+    ],
+    "shower": [
+      {
+        "id": "B07F2C8PYK",
+        "title": "AmazonBasics 5 Functions Sliding Rail Shower Combo - Polished Chrome",
+        "types": [
+          "PLUMBING_FIXTURE"
+        ],
+        "image_id": "61w4fs2ESyL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 23.62
+            },
+            "unit": "inches",
+            "value": 23.62
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7.87
+            },
+            "unit": "inches",
+            "value": 7.87
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.9
+            },
+            "unit": "inches",
+            "value": 5.9
+          }
+        }
+      },
+      {
+        "id": "B07RWDGGSH",
+        "title": "AmazonBasics Wireless Shower Speaker with 5W Driver, Suction Cup, Built-in Mic - Black",
+        "types": [
+          "SPEAKERS"
+        ],
+        "image_id": "61FHqstNWrL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 1.62
+            },
+            "unit": "inches",
+            "value": 1.62
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.98
+            },
+            "unit": "inches",
+            "value": 3.98
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.55
+            },
+            "unit": "inches",
+            "value": 3.55
+          }
+        }
+      },
+      {
+        "id": "B07PGMSWSX",
+        "title": "AmazonBasics Head or Rod Hanging Shower Caddy",
+        "types": [
+          "HOME_BED_AND_BATH"
+        ],
+        "image_id": "61RpMQxB8HL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 11
+            },
+            "unit": "inches",
+            "value": 11
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 29.5
+            },
+            "unit": "inches",
+            "value": 29.5
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5
+            },
+            "unit": "inches",
+            "value": 5
+          }
+        }
+      },
+      {
+        "id": "B07HKVCVNB",
+        "title": "AmazonBasics Linen Style Shower Curtain",
+        "types": [
+          "HOME_BED_AND_BATH"
+        ],
+        "image_id": "91dLVqp9bAL",
+        "dimensions": null
+      },
+      {
+        "id": "B08BKKR9KQ",
+        "title": "(Renewed) AmazonBasics Shower Adjustable -Length Curtain Tension Rod - 54-90\", Chrome",
+        "types": [
+          "HOME"
+        ],
+        "image_id": "41S3FgZnOXL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 1.4
+            },
+            "unit": "inches",
+            "value": 1.4
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 90
+            },
+            "unit": "inches",
+            "value": 90
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 1.4
+            },
+            "unit": "inches",
+            "value": 1.4
+          }
+        }
+      },
+      {
+        "id": "B083V9HT7D",
+        "title": "Solimo 5-Blade MotionSphere Razor for Men with Dual Lubrication and Precision Beard Trimmer, Handle & 2 Cartridges & 5-Blade Razor for Women, Handle, 2 Cartridges & Shower Hanger",
+        "types": [
+          "BEAUTY"
+        ],
+        "image_id": "51S+CqcYDsL",
+        "dimensions": null
+      }
+    ],
+    "vanity": [
+      {
+        "id": "B07B4SC2KW",
+        "title": "Amazon Brand \u2013 Stone & Beam Vintage Bathroom Vanity Fixture With 4 Light Bulbs And Glass Shade - 32.25 x 7 x 11.5 Inches, Chrome",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "71bXD+d4rqL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 11.5
+            },
+            "unit": "inches",
+            "value": 11.5
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7
+            },
+            "unit": "inches",
+            "value": 7
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 32.25
+            },
+            "unit": "inches",
+            "value": 32.25
+          }
+        }
+      },
+      {
+        "id": "B07T61G2WF",
+        "title": "AmazonBasics Vanity Mirror with Heavy Base",
+        "types": [
+          "HOME_FURNITURE_AND_DECOR"
+        ],
+        "image_id": "61H86gf2vlL",
+        "dimensions": null
+      },
+      {
+        "id": "B07T3SQM7W",
+        "title": "AmazonBasics Vanity Mirror with Dual Trays",
+        "types": [
+          "HOME_FURNITURE_AND_DECOR"
+        ],
+        "image_id": "61QyU34m+JL",
+        "dimensions": null
+      },
+      {
+        "id": "B07QJ766RB",
+        "title": "Amazon Brand \u2013 Ravenna Home Casual Vanity Light, 7.80\"H, Brushed Nickel",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "61jbwR+msmL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 22.44
+            },
+            "unit": "inches",
+            "value": 22.44
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7.8
+            },
+            "unit": "inches",
+            "value": 7.8
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8.27
+            },
+            "unit": "inches",
+            "value": 8.27
+          }
+        }
+      },
+      {
+        "id": "B082DPCC9F",
+        "title": "Amazon Brand \u2013 Rivet 3-Light Vanity with Frosted-Glass Shades, 7\"H, Matte Brass",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "61YUy79f29L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7
+            },
+            "unit": "inches",
+            "value": 7
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 4
+            },
+            "unit": "inches",
+            "value": 4
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 24
+            },
+            "unit": "inches",
+            "value": 24
+          }
+        }
+      },
+      {
+        "id": "B07QD5RGPB",
+        "title": "Amazon Brand \u2013 Rivet Mid-Century Vanity Light, 10\"H, Dark Bronze",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "71gK1OE3t4L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 10
+            },
+            "unit": "inches",
+            "value": 10
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8.4
+            },
+            "unit": "inches",
+            "value": 8.4
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 31.5
+            },
+            "unit": "inches",
+            "value": 31.5
+          }
+        }
+      }
+    ],
+    "bathroom_light": [
+      {
+        "id": "B07B4SC2KW",
+        "title": "Amazon Brand \u2013 Stone & Beam Vintage Bathroom Vanity Fixture With 4 Light Bulbs And Glass Shade - 32.25 x 7 x 11.5 Inches, Chrome",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "71bXD+d4rqL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 11.5
+            },
+            "unit": "inches",
+            "value": 11.5
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7
+            },
+            "unit": "inches",
+            "value": 7
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 32.25
+            },
+            "unit": "inches",
+            "value": 32.25
+          }
+        }
+      },
+      {
+        "id": "B07QJ766RB",
+        "title": "Amazon Brand \u2013 Ravenna Home Casual Vanity Light, 7.80\"H, Brushed Nickel",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "61jbwR+msmL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 22.44
+            },
+            "unit": "inches",
+            "value": 22.44
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7.8
+            },
+            "unit": "inches",
+            "value": 7.8
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8.27
+            },
+            "unit": "inches",
+            "value": 8.27
+          }
+        }
+      },
+      {
+        "id": "B082DPCC9F",
+        "title": "Amazon Brand \u2013 Rivet 3-Light Vanity with Frosted-Glass Shades, 7\"H, Matte Brass",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "61YUy79f29L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 7
+            },
+            "unit": "inches",
+            "value": 7
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 4
+            },
+            "unit": "inches",
+            "value": 4
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 24
+            },
+            "unit": "inches",
+            "value": 24
+          }
+        }
+      },
+      {
+        "id": "B07QD5RGPB",
+        "title": "Amazon Brand \u2013 Rivet Mid-Century Vanity Light, 10\"H, Dark Bronze",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "71gK1OE3t4L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 10
+            },
+            "unit": "inches",
+            "value": 10
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8.4
+            },
+            "unit": "inches",
+            "value": 8.4
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 31.5
+            },
+            "unit": "inches",
+            "value": 31.5
+          }
+        }
+      },
+      {
+        "id": "B07QHMVNH9",
+        "title": "Stone & Beam Modern Steel-Framed Vanity Light with Clear Blown-Glass Shade, 10.68\" H, Oil-Rubbed Bronze",
+        "types": [
+          "LIGHT_FIXTURE"
+        ],
+        "image_id": "71ZuNVJiriL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 22.68
+            },
+            "unit": "inches",
+            "value": 22.68
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 10.68
+            },
+            "unit": "inches",
+            "value": 10.68
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 8
+            },
+            "unit": "inches",
+            "value": 8
+          }
+        }
+      },
+      {
+        "id": "B07WT5TDLF",
+        "title": "Stone & Beam Modern 3 Light Vanity Light",
+        "types": [
+          "HOME_LIGHTING_AND_LAMPS"
+        ],
+        "image_id": "71Oo6uYF8VL",
+        "dimensions": null
+      }
+    ],
+    "towel_rack": [
+      {
+        "id": "B07WCG73NZ",
+        "title": "Umi 4-Piece Bathroom Hardware Set, Wall Mounted Stainless Steel Bathroom Accessory Brushed Nickel,Single Towel Bar Rail, Towel Ring,Toilet Roll Holder, Robe Hook Combo kit",
+        "types": [
+          "TOOLS"
+        ],
+        "image_id": "519y7pNAXqL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.17
+            },
+            "unit": "inches",
+            "value": 3.17
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.95
+            },
+            "unit": "inches",
+            "value": 5.95
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 24.21
+            },
+            "unit": "inches",
+            "value": 24.21
+          }
+        }
+      },
+      {
+        "id": "B083TB8DZP",
+        "title": "Umi. by Amazon Self Adhesive Hooks Coat Hook Towel Holder for Bathroom Kitchen Storage SUS 304 Stainless Steel Heavy Duty Wall Mount Matte Black 2 Pack, A2164DG-BK-P2",
+        "types": [
+          "STORAGE_HOOK"
+        ],
+        "image_id": "51vFyctNYsL",
+        "dimensions": null
+      },
+      {
+        "id": "B07JCYLS8X",
+        "title": "AmazonBasics Dual-Arm T-Bar Hand Towel Holder Rack",
+        "types": [
+          "TOWEL_HOLDER"
+        ],
+        "image_id": "71dLLhsFwSL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 14.4
+            },
+            "unit": "inches",
+            "value": 14.4
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 11.9
+            },
+            "unit": "inches",
+            "value": 11.9
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 4
+            },
+            "unit": "inches",
+            "value": 4
+          }
+        }
+      },
+      {
+        "id": "B07K4WSDMH",
+        "title": "AmazonBasics Dual-Arm Hand Towel Holder",
+        "types": [
+          "HOME_BED_AND_BATH"
+        ],
+        "image_id": "71pZnMiNOvL",
+        "dimensions": null
+      },
+      {
+        "id": "B07PCLV36K",
+        "title": "AmazonBasics Standard 18-Inch Towel Bar, Polished Chrome",
+        "types": [
+          "TOWEL_HOLDER"
+        ],
+        "image_id": "51XSanzGGPL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 2.25
+            },
+            "unit": "inches",
+            "value": 2.25
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 19.9
+            },
+            "unit": "inches",
+            "value": 19.9
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.01
+            },
+            "unit": "inches",
+            "value": 3.01
+          }
+        }
+      },
+      {
+        "id": "B073Q5HG7G",
+        "title": "AmazonBasics Double-T Hand Towel Holder and Accessories Jewelry Stand, Black",
+        "types": [
+          "TOWEL_HOLDER"
+        ],
+        "image_id": "715Dt1CVuQL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 13.25
+            },
+            "unit": "inches",
+            "value": 13.25
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 4.8
+            },
+            "unit": "inches",
+            "value": 4.8
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 11
+            },
+            "unit": "inches",
+            "value": 11
+          }
+        }
+      }
+    ],
+    "basin": [
+      {
+        "id": "B084JR2QL6",
+        "title": "Fresh Prepared, Kitchen Sink Cookie",
+        "types": [
+          "GROCERY"
+        ],
+        "image_id": "31lJBp1dALL",
+        "dimensions": null
+      },
+      {
+        "id": "B07F2CBRRY",
+        "title": "AmazonBasics Sink Basin Bathroom Two Handle Faucet",
+        "types": [
+          "PLUMBING_FIXTURE"
+        ],
+        "image_id": "51y6c+7RXyL",
+        "dimensions": null
+      },
+      {
+        "id": "B07XYN2GFR",
+        "title": "AmazonBasics Kitchen Sink Organizer/Sponge Holder, Large",
+        "types": [
+          "DRYING_RACK"
+        ],
+        "image_id": "61TJKD6umJL",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 4.57
+            },
+            "unit": "inches",
+            "value": 4.57
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 9.76
+            },
+            "unit": "inches",
+            "value": 9.76
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 5.2
+            },
+            "unit": "inches",
+            "value": 5.2
+          }
+        }
+      },
+      {
+        "id": "B07VVJQCQB",
+        "title": "Amazon Brand -\u00a0Movian Dive - Bathroom Cabinet w/ Mirror and Washbasin",
+        "types": [
+          "HOME_FURNITURE_AND_DECOR"
+        ],
+        "image_id": "717t1A+FvQL",
+        "dimensions": null
+      },
+      {
+        "id": "B083NR5DVY",
+        "title": "Waterdrop 15UA Under Sink Water Filter System, 16K Gallons Ultra High Capacity Main Faucet Under Counter Water Filtration System, Removes 99% Lead, Fluoride, Chlorine, Bad Taste, USA Tech, 0.5 micron",
+        "types": [
+          "WATER_PURIFICATION_UNIT"
+        ],
+        "image_id": "71RkJwomB8L",
+        "dimensions": {
+          "height": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 16.7
+            },
+            "unit": "inches",
+            "value": 16.7
+          },
+          "length": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.6
+            },
+            "unit": "inches",
+            "value": 3.6
+          },
+          "width": {
+            "normalized_value": {
+              "unit": "inches",
+              "value": 3.6
+            },
+            "unit": "inches",
+            "value": 3.6
+          }
+        }
+      },
+      {
+        "id": "B07DWWTKKR",
+        "title": "Umi. Oil Rubbed Bronze Waterfall Single Handle Lever One Hole Bathroom Vessel Sink Faucet Deck Mount",
+        "types": [
+          "TOOLS"
+        ],
+        "image_id": "612FUHObzhL",
+        "dimensions": null
+      }
+    ]
+  },
+  "bath_related_product_types": {
+    "FAUCET": 64,
+    "TOILET_PAPER_HOLDER": 77,
+    "HOME_BED_AND_BATH": 3082,
+    "TOWEL_HOLDER": 105,
+    "PAPER_TOWEL_HOLDER": 15,
+    "BATHWATER_ADDITIVE": 29,
+    "SHOWERHEAD": 18,
+    "TOILET_SEAT": 16
+  }
+}

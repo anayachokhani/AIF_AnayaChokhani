@@ -10,6 +10,7 @@ from scipy.special import softmax
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
+from formaos.definitions import ROOM_CATEGORY_TITLE_RULES
 from formaos.catalogue.index_catalogue import search_items
 from formaos.contracts import CatalogueItem, DesignSlot, Direction, RoomBrief
 from formaos.placement.zones import PlacementZoneError, assign_zone_for_slot
@@ -19,34 +20,7 @@ from formaos.room_state import brief_dimensions_cm
 DEFAULT_CATALOGUE_PATH = Path("data/curated/abo_mvp_catalogue_with_images.csv")
 DEFAULT_CHROMA_PATH = Path("data/vectorstores/chroma")
 MAX_ALTERNATIVES = 3
-FailureCode = Literal["category", "width", "depth", "dimensions", "budget", "retrieval"]
-
-ROOM_CATEGORY_TITLE_RULES: dict[tuple[str, str], tuple[set[str], set[str]]] = {
-    ("bedroom", "storage"): (
-        {"wardrobe", "dresser", "drawer", "organizer", "shelf", "cabinet"},
-        {"coffee table", "ottoman", "bench", "desk", "container", "folder", "recliner"},
-    ),
-    ("bedroom", "cabinet"): (
-        {"wardrobe", "dresser", "drawer", "sideboard", "bookcase", "cabinet"},
-        {"media", "tv", "filing", "shoe"},
-    ),
-    ("bedroom", "table"): (
-        {"side table", "bedside", "nightstand"},
-        {"coffee table", "dining"},
-    ),
-    ("living_room", "storage"): (
-        {"media", "console", "cabinet", "sideboard", "shelf"},
-        {"folder", "container", "desk", "recliner"},
-    ),
-    ("study", "storage"): (
-        {"file", "drawer", "organizer", "shelf", "bookcase", "cabinet"},
-        {"coffee table", "ottoman", "bench", "container"},
-    ),
-    ("study", "cabinet"): (
-        {"file", "bookcase", "drawer", "cabinet", "shelf"},
-        {"media", "tv", "shoe"},
-    ),
-}
+FailureCode = Literal["category", "width", "depth", "height", "dimensions", "budget", "retrieval"]
 
 
 class GrounderValidationError(ValueError):
@@ -59,6 +33,7 @@ class GrounderValidationError(ValueError):
 class SlotConstraints(BaseModel):
     max_width_cm: float = Field(..., gt=0)
     max_depth_cm: float = Field(..., gt=0)
+    max_height_cm: float | None = Field(default=None, gt=0)
     max_price_inr: int = Field(..., gt=0)
 
 
@@ -97,7 +72,7 @@ class GroundedSlot(BaseModel):
 
 
 class GrounderOutput(BaseModel):
-    grounded_slots: list[GroundedSlot] = Field(..., min_length=1)
+    grounded_slots: list[GroundedSlot] = Field(default_factory=list)
 
     @property
     def selected_items(self) -> list[CatalogueItem]:
@@ -109,7 +84,7 @@ class GrounderOutput(BaseModel):
 
 
 def compute_slot_budget_inr(brief: RoomBrief, slot: DesignSlot) -> int:
-    return max(1, round(brief.budget_inr * slot.budget_share))
+    return max(1, round(brief.budget_inr * slot.budget_share / slot.quantity))
 
 
 def compute_slot_limits(brief: RoomBrief, slot: DesignSlot) -> SlotConstraints:
@@ -141,6 +116,7 @@ def compute_slot_limits(brief: RoomBrief, slot: DesignSlot) -> SlotConstraints:
     return SlotConstraints(
         max_width_cm=round(min(target_width, placement_width) * constraint_multiplier, 1),
         max_depth_cm=round(min(target_depth, placement_depth) * constraint_multiplier, 1),
+        max_height_cm=dims.height_cm,
         max_price_inr=compute_slot_budget_inr(brief, slot),
     )
 
@@ -212,6 +188,7 @@ def diagnose_failure(
             row
             for row in category_rows
             if float(row["width_cm"]) <= constraints.max_width_cm and float(row["depth_cm"]) <= constraints.max_depth_cm
+            and (constraints.max_height_cm is None or (row.get("height_cm") and float(row["height_cm"]) <= constraints.max_height_cm))
         ]
         # rich.print(f"DEBUG DIMENSION SATISFYING ROWS\n{satisfying_dimension_rows = }")
         if not satisfying_dimension_rows:
@@ -221,6 +198,9 @@ def diagnose_failure(
             elif not satisfying_depth_rows:
                 code = "depth"
                 blocked_by = "maximum_depth_exceeded"
+            elif constraints.max_height_cm is not None and not any(row.get("height_cm") and float(row["height_cm"]) <= constraints.max_height_cm for row in category_rows):
+                code = "height"
+                blocked_by = "maximum_height_exceeded_or_unknown"
             else:
                 code = "dimensions"
                 blocked_by = "dimension_combination_exceeded"
@@ -275,6 +255,7 @@ def ground_slot(
         max_width_cm=constraints.max_width_cm,
         max_depth_cm=constraints.max_depth_cm,
         max_price_inr=constraints.max_price_inr,
+        **({"max_height_cm": constraints.max_height_cm} if constraints.max_height_cm is not None else {}),
         k=15,
         chroma_path=chroma_path,
     )

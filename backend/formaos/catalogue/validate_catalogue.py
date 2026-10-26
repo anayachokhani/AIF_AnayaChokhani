@@ -5,26 +5,10 @@ import csv
 import json
 from collections import Counter
 from pathlib import Path
+from formaos.definitions import SUPPORTED_CATEGORIES as ALLOWED_CATEGORIES
+from formaos.definitions import PRICE_BANDS
+from formaos.definitions import DIMENSION_BANDS
 
-
-ALLOWED_CATEGORIES = {
-    "sofa",
-    "loveseat",
-    "bed",
-    "cabinet",
-    "storage",
-    "table",
-    "desk",
-    "chair",
-    "rug",
-    "lamp",
-    "mirror",
-    "planter",
-    "refrigerator", 
-    "utensil", 
-    "basin", 
-    "microwave"
-}
 
 REQUIRED_COLUMNS = {
     "item_id",
@@ -46,36 +30,6 @@ REQUIRED_COLUMNS = {
     "style_text",
     "price_inr",
     "price_note",
-}
-
-PRICE_BANDS = {
-    "sofa": (28000, 120000),
-    "loveseat": (18000, 75000),
-    "bed": (15000, 90000),
-    "cabinet": (8000, 70000),
-    "storage": (2500, 35000),
-    "table": (3500, 55000),
-    "desk": (6000, 65000),
-    "chair": (2500, 45000),
-    "rug": (1500, 40000),
-    "lamp": (1200, 30000),
-    "mirror": (1200, 30000),
-    "planter": (600, 12000),
-}
-
-DIMENSION_BANDS = {
-    "sofa": (80, 340, 45, 180, 35, 140),
-    "loveseat": (80, 230, 45, 160, 35, 140),
-    "bed": (120, 230, 70, 230, 15, 180),
-    "cabinet": (25, 260, 20, 120, 25, 240),
-    "storage": (15, 220, 15, 120, 10, 220),
-    "table": (25, 260, 25, 160, 15, 130),
-    "desk": (60, 220, 35, 120, 45, 130),
-    "chair": (25, 140, 25, 140, 35, 160),
-    "rug": (40, 420, 40, 420, 0.1, 8),
-    "lamp": (5, 120, 5, 120, 8, 240),
-    "mirror": (10, 220, 1, 80, 10, 220),
-    "planter": (5, 100, 5, 100, 5, 120),
 }
 
 

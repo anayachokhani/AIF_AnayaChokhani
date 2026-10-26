@@ -16,6 +16,7 @@ type ExportItem = {
   material?: string | null;
   color?: string | null;
   price_inr: number;
+  quantity?: number;
   image_path?: string | null;
   image_available?: boolean;
   placement_zone?: string | null;
@@ -140,7 +141,7 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
   }, [designId, reloadToken, revisionQuery]);
 
   const itemTotal = useMemo(() => {
-    return payload?.selected_items.reduce((sum, item) => sum + item.price_inr, 0) ?? 0;
+    return payload?.selected_items.reduce((sum, item) => sum + item.price_inr * (item.quantity ?? 1), 0) ?? 0;
   }, [payload]);
   const generatedAt = payload ? new Date(payload.generated_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "";
 
@@ -387,7 +388,7 @@ export function ExportBriefClient({ designId, revisionId }: { designId: string; 
                   {item.material ?? "Material n/a"} - {item.color ?? "Colour n/a"} - zone {item.placement_zone ?? "n/a"}
                 </p>
               </div>
-              <strong>{formatCurrency(item.price_inr)}</strong>
+              <strong>{formatCurrency(item.price_inr * (item.quantity ?? 1))}{(item.quantity ?? 1) > 1 ? ` (${item.quantity}  x  ${formatCurrency(item.price_inr)})` : ""}</strong>
             </article>
           ))}
         </div>

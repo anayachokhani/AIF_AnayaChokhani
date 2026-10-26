@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { formatCurrency, products } from "../data";
+import { roomLimits, roomDimensionError, roomDimensionFieldErrors, convertRoomUnit } from "./roomDimensions";
 
 const requiredCategories = ["Sofa", "Coffee table", "Rug", "Storage", "Lighting"];  ////
 const directionOptions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"];
@@ -98,6 +99,9 @@ export function PlannerTool() {
   }, [width, depth, units, budget, style, vastu, mainDoor, compass]);
 
   const currentUnit = unitOptions[units];
+  const dimensionLimits = roomLimits(roomType, units);
+  const dimensionError = roomDimensionError(roomType, width, depth, units);
+  const dimensionFieldErrors = roomDimensionFieldErrors(roomType, width, depth, units);
   const roomBrief = {
     room_type: roomType,
     width,
@@ -113,6 +117,7 @@ export function PlannerTool() {
 
   async function createBackendSession(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (dimensionError) { setSessionStatus(dimensionError); return; }
     setSessionStatus("Saving room brief...");
     try {
       const response = await fetch("/api/session", {
@@ -146,6 +151,8 @@ export function PlannerTool() {
             <option value="bedroom">Bedroom</option>
             <option value="study">Study</option>
             <option value="kitchen">Kitchen</option>
+            <option value="bathroom">Bathroom</option>
+            <option value="dining_room">Dining room</option>
           </select>
         </label>
         <label>
@@ -156,8 +163,8 @@ export function PlannerTool() {
             onChange={(event) => {
               const next = event.target.value as Unit;
               setUnits(next);
-              setWidth(next === "cm" ? 360 : next === "ft" ? 12 : 3.6);
-              setDepth(next === "cm" ? 420 : next === "ft" ? 14 : 4.2);
+              setWidth(convertRoomUnit(width, units, next));
+              setDepth(convertRoomUnit(depth, units, next));
             }}
             aria-label="Measurement units"
           >
@@ -173,12 +180,13 @@ export function PlannerTool() {
           </span>
           <input
             type="range"
-            min={currentUnit.minWidth}
+            min={dimensionLimits.minSide}
             max={currentUnit.maxWidth}
             step={currentUnit.step}
             value={width}
             onChange={(event) => setWidth(Number(event.target.value))}
           />
+          {dimensionFieldErrors.width ? <small className="room-dimension-error" role="alert">{dimensionFieldErrors.width}</small> : null}
         </label>
         <label>
           Room depth
@@ -187,12 +195,13 @@ export function PlannerTool() {
           </span>
           <input
             type="range"
-            min={currentUnit.minDepth}
+            min={dimensionLimits.minSide}
             max={currentUnit.maxDepth}
             step={currentUnit.step}
             value={depth}
             onChange={(event) => setDepth(Number(event.target.value))}
           />
+          {dimensionFieldErrors.depth ? <small className="room-dimension-error" role="alert">{dimensionFieldErrors.depth}</small> : null}
         </label>
         <label>
           Budget
@@ -262,7 +271,7 @@ export function PlannerTool() {
           <span>{formatCurrency(budget)}</span>
           <span>{sessionStatus}</span>
         </div>
-        <button className="primary-action" type="submit">
+        <button className="primary-action" type="submit" disabled={Boolean(dimensionError)}>
           Save RoomBrief
         </button>
       </form>

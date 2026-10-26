@@ -1,26 +1,10 @@
 from __future__ import annotations
 
+from formaos.definitions import DEFAULT_CATEGORY_ZONES
 from formaos.contracts import Direction, DesignSlot
 
 
 ZONES: tuple[Direction, ...] = ("NW", "N", "NE", "W", "C", "E", "SW", "S", "SE")
-
-DEFAULT_CATEGORY_ZONES: dict[str, tuple[Direction, ...]] = {
-    "bed": ("SW",),
-    "wardrobe": ("SW", "S", "W"),
-    "cabinet": ("SW", "S", "W"),
-    "storage": ("SW", "S", "W"),
-    "sofa": ("S", "W"),
-    "loveseat": ("S", "W"),
-    "mirror": ("N", "E"),
-    "stove": ("SE",),
-    "lamp": ("SE", "S"),
-    "table": ("C",),
-    "rug": ("C",),
-    "desk": ("E", "N"),
-    "chair": ("E", "N"),
-    "planter": ("NE", "N", "E"),
-}
 
 
 class PlacementZoneError(ValueError):

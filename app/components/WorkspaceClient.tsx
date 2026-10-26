@@ -8,6 +8,7 @@ import { formatCurrency } from "../data";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import { MarbleWorldPanel } from "./MarbleWorldPanel";
 import { ZoneGrid, type ZoneGridItem } from "./ZoneGrid";
+import { roomLimits, roomDimensionError, roomDimensionFieldErrors, convertRoomUnit } from "./roomDimensions";
 import { clonePageVaryPathWithNewSearchParams } from "next/dist/client/components/segment-cache/vary-path";
 
 const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"] as const;
@@ -21,6 +22,7 @@ const MAX_BUDGET = 500000;
 const BUDGET_STEP = 5000;
 const apiErrorStates = [
   "invalid_brief",
+  "room_fit_failed",
   "no_catalogue_results",
   "retry_exhausted",
   "graph_failure",
@@ -45,13 +47,14 @@ type CatalogueItem = {
   material?: string | null;
   color?: string | null;
   price_inr: number;
+  quantity?: number;
   image_path?: string | null;
   image_available?: boolean;
   placement_zone?: Direction | null;
 };
 
 type GroundedSlot = {
-  slot: { slot_id: string; category: string; purpose?: string; style_text?: string; placement_hint?: Direction | null };
+  slot: { slot_id: string; category: string; quantity?: number; purpose?: string; style_text?: string; placement_hint?: Direction | null };
   constraints?: { max_width_cm: number; max_depth_cm: number };
   placement_zone: Direction;
   selected_item?: CatalogueItem | null;
@@ -87,6 +90,7 @@ type BackendDesign = {
     room_type: string;
     width: number;
     depth: number;
+    height?: number | null;
     units: Unit;
     budget_inr: number;
     style_words: string[];
@@ -99,6 +103,7 @@ type BackendDesign = {
   concept_history?: ConceptRevision[];
   source_images?: string[];
   last_revision_request?: string;
+  last_product_update?: boolean;
   chat_messages?: Array<{ role: "user" | "assistant"; content: string }>;
   status: "passed" | "failed";
   grounder_output: { grounded_slots: GroundedSlot[] };
@@ -462,6 +467,17 @@ function finishScheduleFor(
       linkLabel: "Browse IKEA bed linen",
     });
   }
+  if (roomType === "bathroom") {
+    return schedule.filter((item) => !["Window treatments", "Paintings & wall art", "Soft furnishings", "Showpieces"].includes(item.category)).map((item) => {
+      if (item.category === "Flooring") return { ...item, recommendation: `${palette.floor[0]} slip-resistant bathroom floor tile`, note: "Coordinate floor falls and drainage with the existing wet zone.", link: "https://www.kajariaceramics.com/catalogues", linkLabel: "Browse Kajaria tiles" };
+      if (item.category === "Wall paint") return { ...item, recommendation: `${palette.wall[0]} moisture-resistant bathroom paint outside splash zones`, note: "Use a suitable tile or waterproof finish in shower splash zones." };
+      if (item.category === "Plants") return { ...item, recommendation: "One compact humidity-tolerant plant", quantity: "1 plant", note: "Keep the basin, ventilation and walking area clear." };
+      return item;
+    });
+  }
+  if (roomType === "dining_room") {
+    return schedule.map((item) => item.category === "Soft furnishings" ? { ...item, recommendation: `${palette.secondary[0]} washable table runner and coordinated placemats`, quantity: "1 table runner and 4 placemats", note: "Keep table linens clear of pendant lights and serving areas." } : item);
+  }
   return schedule;
 }
 
@@ -641,7 +657,10 @@ export function WorkspaceClient() {
   const style = [...selectedStyles, ...selectedPreferences].join(" ");
   const designGoal = `Design my ${roomType.replaceAll("_", " ")} with ${selectedStyles.join(", ")} style.`;
   const message = `Create a saved design with ${selectedPreferences.join(", ")}.`;
-  const dimensionsLabel = `${depth} ft x ${width} ft x ${height} ft`;
+  const dimensionLimits = roomLimits(roomType, unit);
+  const dimensionError = roomDimensionError(roomType, width, depth, unit, height);
+  const dimensionFieldErrors = roomDimensionFieldErrors(roomType, width, depth, unit, height);
+  const dimensionsLabel = `${depth} ${unit} x ${width} ${unit} x ${height} ${unit}`;
   const projectName = `${roomType.replaceAll("_", " ")} - ${selectedStyles.slice(0, 2).join(", ") || "New design"}`;
   const photoNotes = photos.map((photo) => `${photo.name}: ${photo.note}`);
   const slots = selectedSlots(design);
@@ -663,16 +682,20 @@ export function WorkspaceClient() {
   const comparisonImage = selectedRevisionIndex > 0
     ? conceptHistory[selectedRevisionIndex - 1]?.image_data_url ?? sourceImage
     : sourceImage;
-  const displayedProducts: RevisionProduct[] = selectedRevision?.selected_products ?? slots.map((slot) => ({
+  const pendingProductUpdate = Boolean(design?.last_product_update && design?.last_revision_request);
+  const showingLatestRevision = selectedRevision?.revision_id === conceptHistory.at(-1)?.revision_id;
+  const revisionProducts = pendingProductUpdate && showingLatestRevision ? undefined : selectedRevision?.selected_products;
+  const displayedProducts: RevisionProduct[] = revisionProducts ?? slots.map((slot) => ({
     ...(slot.selected_item as CatalogueItem),
     category: slot.slot.category,
+    quantity: slot.slot.quantity ?? 1,
   }));
-  const displayedSlots: GroundedSlot[] = selectedRevision?.selected_products?.length
-    ? selectedRevision.selected_products.map((product) => {
+  const displayedSlots: GroundedSlot[] = revisionProducts
+    ? revisionProducts.map((product) => {
       const currentSlot = slots.find((slot) => slot.slot.category === product.category || slot.selected_item?.item_id === product.item_id);
       const isCurrentSelection = currentSlot?.selected_item?.item_id === product.item_id;
       return {
-        slot: currentSlot?.slot ?? { slot_id: `revision-${product.item_id}`, category: product.category },
+        slot: { ...(currentSlot?.slot ?? { slot_id: `revision-${product.item_id}`, category: product.category }), quantity: product.quantity ?? currentSlot?.slot.quantity ?? 1 },
         constraints: currentSlot?.constraints,
         placement_zone: (product.placement_zone ?? currentSlot?.placement_zone ?? "C") as Direction,
         selected_item: product as CatalogueItem,
@@ -686,8 +709,8 @@ export function WorkspaceClient() {
   console.log(slots);
   console.log(displayedSlots);
 
-  const visibleTotal = displayedSlots.reduce((sum, slot) => sum + (slot.selected_item?.price_inr ?? 0), 0);
-  const backendTotal = selectedRevision?.selected_products?.length ? visibleTotal : design?.critic_verdict.total_price_inr ?? 0;
+  const visibleTotal = displayedSlots.reduce((sum, slot) => sum + (slot.selected_item?.price_inr ?? 0) * (slot.slot.quantity ?? 1), 0);
+  const backendTotal = revisionProducts ? visibleTotal : design?.critic_verdict.total_price_inr ?? 0;
   const exactTotal = design ? visibleTotal === backendTotal : false;
   const budgetPercent = budget > 0 ? Math.min(100, Math.round(((design ? backendTotal : budget) / budget) * 100)) : 0;
   const finishSchedule = selectedRevision?.finish_schedule?.length
@@ -721,6 +744,7 @@ export function WorkspaceClient() {
     room_type: roomType,
     width,
     depth,
+    height,
     units: unit,
     budget_inr: budget,
     style_words: styleWords(style),
@@ -853,6 +877,7 @@ export function WorkspaceClient() {
       setWidth(payload.design.room_brief.width);
       setDepth(payload.design.room_brief.depth);
       setUnit(payload.design.room_brief.units);
+      setHeight(payload.design.room_brief.height ?? convertRoomUnit(10, "ft", payload.design.room_brief.units));
       setBudget(payload.design.room_brief.budget_inr);
       setSelectedStyles(payload.design.room_brief.style_words.length ? payload.design.room_brief.style_words : ["Modern"]);
       setSelectedPreferences(payload.design.room_brief.constraints.length ? payload.design.room_brief.constraints : ["More storage"]);
@@ -878,6 +903,7 @@ export function WorkspaceClient() {
   }
 
   async function createNewSessionAndSendMessage() {
+    if (dimensionError) { setError(dimensionError); return; }
     setLoading(true);
     setError("");
     setWarning("");
@@ -1081,6 +1107,7 @@ export function WorkspaceClient() {
   }
 
   async function startDesign() {
+    if (dimensionError) { setError(dimensionError); return; }
     if (!homeowner) {
       setError("sign_in_required: sign in so YourSpace can save this design to your account");
       return;
@@ -1215,7 +1242,7 @@ export function WorkspaceClient() {
       appendProjectMessage(
         projectId,
         "assistant",
-        refreshRequested
+        payload.design.last_product_update || refreshRequested
           ? "I am updating the matching catalogue furniture first, then synchronizing the room image and shopping list."
           : revisionMode === "variation"
           ? "I am creating a visibly different design alternative while keeping this room's architecture and viewpoint fixed."
@@ -1339,6 +1366,7 @@ export function WorkspaceClient() {
   function nextStep(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (step === 4) commitBudgetInput();
+    if (dimensionError) { setError(dimensionError); return; }
     if (step < wizardSteps.length - 1) setStep(step + 1);
   }
 
@@ -1450,24 +1478,39 @@ export function WorkspaceClient() {
               </div>
               <div className="ys-form-grid">
                 <strong>Room dimensions</strong>
-                <label>
+                <label className="ys-dimension-field" htmlFor="room-depth">
                   Length
-                  <input value={depth} type="number" min="1" onChange={(event) => setDepth(Number(event.target.value))} />
-                  <span>{unit}</span>
+                  <div className="ys-dimension-input">
+                    <input id="room-depth" value={depth} type="number" min={dimensionLimits.minSide} max={dimensionLimits.maxSide} step="any" aria-invalid={Boolean(dimensionFieldErrors.depth)} aria-describedby={dimensionFieldErrors.depth ? "room-depth-error" : undefined} onChange={(event) => setDepth(Number(event.target.value))} />
+                    <span>{unit}</span>
+                  </div>
+                  {dimensionFieldErrors.depth ? <small id="room-depth-error" className="ys-dimension-error" role="alert">{dimensionFieldErrors.depth}</small> : null}
                 </label>
-                <label>
+                <label className="ys-dimension-field" htmlFor="room-width">
                   Width
-                  <input value={width} type="number" min="1" onChange={(event) => setWidth(Number(event.target.value))} />
-                  <span>{unit}</span>
+                  <div className="ys-dimension-input">
+                    <input id="room-width" value={width} type="number" min={dimensionLimits.minSide} max={dimensionLimits.maxSide} step="any" aria-invalid={Boolean(dimensionFieldErrors.width)} aria-describedby={dimensionFieldErrors.width ? "room-width-error" : undefined} onChange={(event) => setWidth(Number(event.target.value))} />
+                    <span>{unit}</span>
+                  </div>
+                  {dimensionFieldErrors.width ? <small id="room-width-error" className="ys-dimension-error" role="alert">{dimensionFieldErrors.width}</small> : null}
                 </label>
-                <label>
+                <label className="ys-dimension-field" htmlFor="room-height">
                   Height
-                  <input value={height} type="number" min="1" onChange={(event) => setHeight(Number(event.target.value))} />
-                  <span>{unit}</span>
+                  <div className="ys-dimension-input">
+                    <input id="room-height" value={height} type="number" min={dimensionLimits.minHeight} step="any" aria-invalid={Boolean(dimensionFieldErrors.height)} aria-describedby={dimensionFieldErrors.height ? "room-height-error" : undefined} onChange={(event) => setHeight(Number(event.target.value))} />
+                    <span>{unit}</span>
+                  </div>
+                  {dimensionFieldErrors.height ? <small id="room-height-error" className="ys-dimension-error" role="alert">{dimensionFieldErrors.height}</small> : null}
                 </label>
                 <label>
                   Units
-                  <select value={unit} onChange={(event) => setUnit(event.target.value as Unit)}>
+                  <select value={unit} onChange={(event) => {
+                    const next = event.target.value as Unit;
+                    setWidth(convertRoomUnit(width, unit, next));
+                    setDepth(convertRoomUnit(depth, unit, next));
+                    setHeight(convertRoomUnit(height, unit, next));
+                    setUnit(next);
+                  }}>
                     {units.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
@@ -1480,6 +1523,8 @@ export function WorkspaceClient() {
                     <option value="bedroom">Master bedroom</option>
                     <option value="study">Home office</option>
                     <option value="kitchen">Kitchen</option>
+                    <option value="bathroom">Bathroom</option>
+                    <option value="dining_room">Dining room</option>
                   </select>
                 </label>
               </div>
@@ -1602,7 +1647,7 @@ export function WorkspaceClient() {
 
           <div className="ys-wizard-actions">
             {step > 0 ? <button className="secondary-button" type="button" onClick={previousStep}>Back</button> : <span />}
-            <button className="primary-button" type="submit">Next</button>
+            <button className="primary-button" type="submit" disabled={Boolean(dimensionError)}>Next</button>
           </div>
         </form>
       ) : (
@@ -1621,7 +1666,7 @@ export function WorkspaceClient() {
             </dl>
             <div className="ys-wizard-actions">
               <button className="secondary-button" type="button" onClick={previousStep}>Back</button>
-              <button className="primary-button" type="button" onClick={startDesign} disabled={loading}>
+              <button className="primary-button" type="button" onClick={startDesign} disabled={loading || Boolean(dimensionError)}>
                 {loading ? "Generating..." : design ? displayedConcept?.image_data_url ? "Regenerate selected version" : "Generate room image" : "Generate designs"}
               </button>
             </div>
@@ -1874,7 +1919,7 @@ export function WorkspaceClient() {
                         <div className="shopping-product-copy">
                           <div className="shopping-product-heading">
                             <div><span className="product-category">{slot.slot.category}</span><h3>{item.title}</h3></div>
-                            <strong>{formatCurrency(item.price_inr)}</strong>
+                            <strong>{formatCurrency(item.price_inr * (slot.slot.quantity ?? 1))}{(slot.slot.quantity ?? 1) > 1 ? ` (${slot.slot.quantity}  x  ${formatCurrency(item.price_inr)})` : ""}</strong>
                           </div>
                           <p className="shopping-item-id">Catalogue ID {item.item_id} · {imageMatchLabel}</p>
                           <dl className="shopping-product-specs">

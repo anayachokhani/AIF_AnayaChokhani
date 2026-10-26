@@ -9,34 +9,13 @@ from typing import Literal
 
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, field_validator
 
+from formaos.definitions import ALLOWED_OBJECT_CLASSES, DEFAULT_ROOM_TYPES
 from formaos.contracts import Direction
 
 
 Severity = Literal["info", "warn", "critical"]
 Perspective = Literal["placement", "orientation", "color", "clearance"]
-RoomType = Literal["any", "living_room", "bedroom", "study", "kitchen"]
-ALLOWED_OBJECT_CLASSES = {
-    "bed",
-    "cabinet",
-    "central_clearance",
-    "chair",
-    "desk",
-    "heavy_furniture",
-    "lamp",
-    "loveseat",
-    "mirror",
-    "planter",
-    "rug",
-    "sofa",
-    "storage",
-    "stove",
-    "table",
-    "water_feature",
-    "refrigerator", 
-    "utensil", 
-    "basin", 
-    "microwave"
-}
+RoomType = str
 ALLOWED_COLOR_PATTERN = re.compile(r"^[a-z][a-z ]*$")
 REQUIRED_RULE_FIELDS = [
     "rule_id",
@@ -67,6 +46,13 @@ class VastuRule(BaseModel):
     rationale: str = Field(..., min_length=24)
     source_urls: list[AnyUrl] = Field(..., min_length=1)
     confidence: float = Field(..., ge=0, le=1)
+
+    @field_validator("room_type")
+    @classmethod
+    def room_type_must_be_supported(cls, value: str) -> str:
+        if value != "any" and value not in DEFAULT_ROOM_TYPES:
+            raise ValueError(f"unsupported room_type: {value}")
+        return value
 
     @field_validator("object_class")
     @classmethod
@@ -171,7 +157,7 @@ def validate_rule_file(path: Path) -> dict[str, object]:
     invalid_confidence_values = 0
     invalid_severity_values = 0
     valid_zones = {"NW", "N", "NE", "W", "C", "E", "SW", "S", "SE"}
-    valid_room_types = {"any", "living_room", "bedroom", "study", "kitchen"}
+    valid_room_types = {"any", *DEFAULT_ROOM_TYPES}
     valid_severities = {"info", "warn", "critical"}
 
     for index, rule in enumerate(raw_rules):

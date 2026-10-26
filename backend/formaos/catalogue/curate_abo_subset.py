@@ -7,58 +7,13 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+from formaos.definitions import CATEGORIES
+from formaos.definitions import PRICE_BANDS, DIMENSION_BANDS, PRICE_MULTIPLIERS
+from formaos.definitions import COMPARABLES
 
 
-ALLOWED_CATEGORIES = (
-    "sofa",
-    "loveseat",
-    "bed",
-    "cabinet",
-    "storage",
-    "table",
-    "desk",
-    "chair",
-    "rug",
-    "lamp",
-    "mirror",
-    "planter",
-    "refrigerator", 
-    "utensil", 
-    "basin", 
-    "microwave"
-)
-
+ALLOWED_CATEGORIES = tuple(CATEGORIES)
 TARGET_COUNTS = {category: 15 for category in ALLOWED_CATEGORIES}
-
-PRICE_BANDS = {
-    "sofa": (28000, 120000),
-    "loveseat": (18000, 75000),
-    "bed": (15000, 90000),
-    "cabinet": (8000, 70000),
-    "storage": (2500, 35000),
-    "table": (3500, 55000),
-    "desk": (6000, 65000),
-    "chair": (2500, 45000),
-    "rug": (1500, 40000),
-    "lamp": (1200, 30000),
-    "mirror": (1200, 30000),
-    "planter": (600, 12000),
-}
-
-COMPARABLES = {
-    "sofa": "Comparable Urban Ladder/Pepperfry India 3-seater sofa",
-    "loveseat": "Comparable Urban Ladder/Pepperfry India 2-seater loveseat",
-    "bed": "Comparable Wakefit/IKEA India bed frame",
-    "cabinet": "Comparable Pepperfry/Home Centre cabinet",
-    "storage": "Comparable IKEA India/Nilkamal storage unit",
-    "table": "Comparable Urban Ladder/IKEA India table",
-    "desk": "Comparable IKEA India/Urban Ladder work desk",
-    "chair": "Comparable IKEA India/Urban Ladder chair",
-    "rug": "Comparable IKEA India/Home Centre area rug",
-    "lamp": "Comparable IKEA India/Home Centre lamp",
-    "mirror": "Comparable IKEA India/Home Centre mirror",
-    "planter": "Comparable Ugaoo/Amazon India planter",
-}
 
 
 def iter_records(root: Path):
@@ -196,20 +151,7 @@ def infer_category(record: dict[str, Any]) -> str | None:
 def plausible_dimensions(category: str, width: float, depth: float, height: float) -> bool:
     if min(width, depth, height) <= 0:
         return False
-    limits = {
-        "sofa": (80, 340, 45, 180, 35, 140),
-        "loveseat": (80, 230, 45, 160, 35, 140),
-        "bed": (120, 230, 70, 230, 15, 180),
-        "cabinet": (25, 260, 20, 120, 25, 240),
-        "storage": (15, 220, 15, 120, 10, 220),
-        "table": (25, 260, 25, 160, 15, 130),
-        "desk": (60, 220, 35, 120, 45, 130),
-        "chair": (25, 140, 25, 140, 35, 160),
-        "rug": (40, 420, 40, 420, 0.1, 8),
-        "lamp": (5, 120, 5, 120, 8, 240),
-        "mirror": (10, 220, 1, 80, 10, 220),
-        "planter": (5, 100, 5, 100, 5, 120),
-    }[category]
+    limits = DIMENSION_BANDS[category]
     min_w, max_w, min_d, max_d, min_h, max_h = limits
     return min_w <= width <= max_w and min_d <= depth <= max_d and min_h <= height <= max_h
 
@@ -241,20 +183,7 @@ def price_for(category: str, width_cm: float, depth_cm: float, height_cm: float,
         material_factor = 1.18
     if any(word in material_lower for word in ("plastic", "fabric", "polyester")):
         material_factor = 0.92
-    category_multiplier = {
-        "sofa": 11000,
-        "loveseat": 8500,
-        "bed": 9000,
-        "cabinet": 6500,
-        "storage": 4200,
-        "table": 5200,
-        "desk": 5800,
-        "chair": 4500,
-        "rug": 2500,
-        "lamp": 3200,
-        "mirror": 3600,
-        "planter": 1600,
-    }[category]
+    category_multiplier = PRICE_MULTIPLIERS[category]
     price = low + category_multiplier * scale * material_factor
     price = min(max(price, low), high)
     return int(round(price / 100) * 100)

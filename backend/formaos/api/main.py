@@ -28,12 +28,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from formaos.definitions import ROOM_CATEGORIES as DEMO_ROOM_CATEGORIES
+from formaos.definitions import ROOM_DEFAULT_NEEDS, ROOM_DESIGN_GUIDANCE
 from formaos.api.marble import create_marble_router
 from formaos.agents.graph_loop import AgentLoopResult, run_agent_loop
 from formaos.agents.critic import critique_design
 from formaos.agents.grounder import ground_design
 from formaos.agents.planner import PlannerClient
+from formaos.agents.product_edits import apply_product_edits, category_aliases, parse_product_edits
+from formaos.contracts import DesignSlot
 from formaos.catalogue.index_catalogue import search_items
+from formaos.placement.spatial import spatial_image_context
 from formaos.contracts import RoomBrief
 from formaos.room_state import (
     InMemoryStateStore,
@@ -318,12 +323,6 @@ class FileAuthStore:
 
 auth_store = FileAuthStore(AUTH_STORE_PATH)
 
-DEMO_ROOM_CATEGORIES: dict[str, list[str]] = {
-    "living_room": ["sofa", "chair", "table", "rug", "storage", "cabinet", "lamp", "mirror", "planter"],
-    "bedroom": ["bed", "storage", "table", "cabinet", "rug", "lamp", "chair", "mirror", "planter"],
-    "study": ["desk", "chair", "storage", "cabinet", "rug", "lamp", "table", "mirror", "planter"],
-    "kitchen": ["refrigerator", "utensil", "basin", "storage", "microwave", "lamp", "planter", "table"]
-}
 
 STYLE_PROFILES: dict[str, str] = {
     "modern": "Modern means clean lines, low-profile furniture, warm neutrals, walnut or teak, black metal accents, restrained abstract art, and uncluttered surfaces.",
@@ -344,6 +343,7 @@ class DemoPlannerClient:
     def complete(self, messages: list[dict[str, str]]) -> str:
         dims = brief_dimensions_cm(self.brief)
         categories = DEMO_ROOM_CATEGORIES.get(self.brief.room_type, DEMO_ROOM_CATEGORIES["living_room"])
+        defaults = {entry["category"]: entry for entry in ROOM_DEFAULT_NEEDS.get(self.brief.room_type, ROOM_DEFAULT_NEEDS["living_room"])}
         share = round(1 / len(categories), 4)
         return json.dumps(
             {
@@ -351,6 +351,7 @@ class DemoPlannerClient:
                     "room_type": self.brief.room_type,
                     "width_cm": dims.width_cm,
                     "depth_cm": dims.depth_cm,
+                    "height_cm": dims.height_cm,
                     "budget_inr": self.brief.budget_inr,
                     "style_words": self.brief.style_words,
                 },
@@ -358,9 +359,9 @@ class DemoPlannerClient:
                 "needs_list": [
                     {
                         "category": category,
-                        "purpose": f"{category} for the room",
-                        "quantity": 1,
-                        "priority": min(index + 1, 5),
+                        "purpose": str(defaults[category]["purpose"]),
+                        "quantity": int(defaults[category].get("quantity", 1)),
+                        "priority": int(defaults[category]["priority"]),
                         "budget_share": share,
                         "style_tags": self.brief.style_words,
                         "constraints": self.brief.constraints,
@@ -663,8 +664,8 @@ def selected_item_lines(design: dict[str, Any] | None) -> list[str]:
             continue
         lines.append(
             clean_prompt_part(
-                f"{slot.get('slot', {}).get('category', 'item')}: {item.get('title')} "
-                f"({item.get('width_cm')} x {item.get('depth_cm')} cm), "
+                f"{slot.get('slot', {}).get('quantity', 1)} {slot.get('slot', {}).get('category', 'item')}: {item.get('title')} "
+                f"({item.get('width_cm')} x {item.get('depth_cm')} x {item.get('height_cm', 'unknown')} cm), "
                 f"material {item.get('material') or 'not specified'}, colour {item.get('color') or 'not specified'}, "
                 f"zone {slot.get('placement_zone')}"
             )
@@ -683,6 +684,7 @@ def selected_product_snapshots(design: dict[str, Any] | None) -> list[dict[str, 
         snapshots.append(
             {
                 **item,
+                "quantity": grounded_slot.get("slot", {}).get("quantity", 1),
                 "category": grounded_slot.get("slot", {}).get("category", item.get("product_type", "item")),
                 "placement_zone": grounded_slot.get("placement_zone"),
             }
@@ -740,6 +742,7 @@ def synchronize_refreshed_products(
             if previous:
                 refreshed_slot["selected_item"] = previous.get("selected_item")
                 refreshed_slot["alternatives"] = list(previous.get("alternatives") or [])
+                refreshed_slot["failure"] = previous.get("failure")
             continue
         previous = previous_by_slot.get(str(slot.get("slot_id") or ""), {})
         current_id = str((previous.get("selected_item") or {}).get("item_id") or "")
@@ -769,6 +772,7 @@ def synchronize_refreshed_products(
         selected = max(replacements, key=match_score)
         selected["placement_zone"] = refreshed_slot.get("placement_zone")
         refreshed_slot["selected_item"] = selected
+        refreshed_slot["failure"] = None
         refreshed_slot["alternatives"] = [
             item for item in candidates if item.get("item_id") != selected.get("item_id")
         ][:3]
@@ -980,6 +984,8 @@ def build_concept_prompt(
             "Create a realistic interior design concept image for a homeowner.",
             f"Project: {project_label}.",
             f"Room: {request.room_type.replace('_', ' ')}. Dimensions: {request.dimensions or 'not specified'}.",
+            ROOM_DESIGN_GUIDANCE.get(request.room_type, ""),
+            spatial_image_context(request.grounded_design),
             f"Style direction: {', '.join(request.style_words) or 'warm, livable, practical'}.",
             f"Style interpretation rules: {' '.join(style_guidance) or 'Translate the selected style into distinct furniture shapes, materials, palette, art, lighting, and styling; do not make all styles look the same.'}",
             f"Required colour palette: {colour_palette or 'derive five distinct colours from the selected style'}. {colour_distribution or 'Use a dominant base, a natural material tone, a secondary hue, and two deliberate accents.'} Do not reduce the room to only beige and brown or reuse the same two-colour scheme for every style.",
@@ -1092,8 +1098,6 @@ def image_bytes_from_data_url(data_url: str) -> tuple[str, bytes]:
         )
 
     return "image/jpeg", image_bytes
-
-
 
 
 # def image_bytes_from_data_url(data_url: str) -> tuple[str, bytes]:
@@ -1566,6 +1570,7 @@ def reconcile_generated_products(
             {
                 **candidate["item"],
                 "category": category,
+                "quantity": snapshot.get("quantity", 1),
                 "placement_zone": candidate.get("placement_zone") or snapshot.get("placement_zone"),
                 "imageMatch": "closest_catalogue_match",
                 "matchConfidence": round(float(confidence), 2) if isinstance(confidence, (int, float)) else None,
@@ -1938,6 +1943,15 @@ async def create_concept_image(payload: ConceptImageRequest, request: Request) -
                 existing_design["source_images"] = recovered_sources[:2]
             design_store.save(str(existing_design["design_id"]), existing_design)
 
+    if existing_design:
+        if existing_design.get("critic_verdict", {}).get("fit", {}).get("status") == "fail":
+            raise typed_error(422, "room_fit_failed", "The selected products do not fit the measured room. Revise product sizes or quantities before generating an image.")
+        measured = existing_design.get("room_brief", {})
+        measured_dimensions = (
+            f"width {measured.get('width')} {measured.get('units')}, depth {measured.get('depth')} {measured.get('units')}"
+            + (f", clear height {measured['height']} {measured.get('units')}" if measured.get('height') is not None else ", clear height not measured")
+        )
+        payload = payload.model_copy(update={"grounded_design": existing_design, "room_type": measured.get("room_type", payload.room_type), "dimensions": measured_dimensions})
     uploaded_sources = [image for image in payload.photo_data_urls if image]
     if existing_design and uploaded_sources:
         existing_design["source_images"] = uploaded_sources[:2]
@@ -2079,6 +2093,7 @@ def revise_design(design_id: str, payload: ReviseRequest, request: Request) -> D
     if design is None:
         raise typed_error(404, "not_found", "design not found")
     assert_design_owner(design, request_user(request))
+    design = deepcopy(design)
     session_id = payload.session_id or str(design["session_id"])
     if state_store.get(session_id) is None:
         room_brief = design.get("room_brief")
@@ -2096,36 +2111,50 @@ def revise_design(design_id: str, payload: ReviseRequest, request: Request) -> D
     }
     state_store.append_message(session_id, "user", payload.message)
     previous_grounded_slots = list(design.get("grounder_output", {}).get("grounded_slots", []))
+    room_brief = RoomBrief(**design["room_brief"])
+    saved_slots = [DesignSlot.model_validate(slot) for slot in design.get("designer_output", {}).get("slots", [])]
+    if not saved_slots:
+        saved_slots = [DesignSlot.model_validate(slot["slot"]) for slot in previous_grounded_slots]
+    aliases = category_aliases(CATALOGUE_PATH, saved_slots)
+    edits = parse_product_edits(payload.message, aliases)
+    updated_slots, added_ids = apply_product_edits(room_brief, saved_slots, edits, payload.message)
     refresh_categories = requested_product_categories(payload.message, previous_grounded_slots)
-    if payload.refresh_products or refresh_categories:
-        room_brief = RoomBrief(**design["room_brief"])
-        design_slots = design.get("designer_output", {}).get("slots", [])
-        if not design_slots:
-            raise typed_error(422, "invalid_design", "saved design has no furniture slots to refresh")
+    products_changed = bool(edits or payload.refresh_products or refresh_categories)
+    if products_changed:
         history = concept_history_with_current(design)
         if history:
             design["concept_history"] = history
-        refreshed = ground_design(
-            room_brief,
-            design_slots,
-            catalogue_path=CATALOGUE_PATH,
-            chroma_path=CHROMA_PATH,
-        )
-        refreshed_output = refreshed.model_dump(mode="json")
-        refreshed_output["grounded_slots"] = synchronize_refreshed_products(
-            previous_grounded_slots,
-            refreshed_output["grounded_slots"],
-            payload.message,
-        )
-        design["grounder_output"] = refreshed_output
+        # New items must be retrieved. Untouched selections remain stable on add/remove.
+        previous_by_id = {slot["slot"]["slot_id"]: slot for slot in previous_grounded_slots}
+        refresh_ids = {
+            slot.slot_id for slot in updated_slots
+            if slot.slot_id in added_ids or slot.slot_id not in previous_by_id
+            or payload.refresh_products or slot.category in refresh_categories
+        }
+        to_ground = [slot for slot in updated_slots if slot.slot_id in refresh_ids]
+        refreshed_slots = ground_design(
+            room_brief, to_ground, catalogue_path=CATALOGUE_PATH, chroma_path=CHROMA_PATH,
+        ).model_dump(mode="json")["grounded_slots"] if to_ground else []
+        refreshed_slots = synchronize_refreshed_products(previous_grounded_slots, refreshed_slots, payload.message)
+        refreshed_by_id = {slot["slot"]["slot_id"]: slot for slot in refreshed_slots}
+        grounded_slots = []
+        for slot in updated_slots:
+            grounded = deepcopy(refreshed_by_id.get(slot.slot_id) or previous_by_id[slot.slot_id])
+            grounded["slot"] = slot.model_dump(mode="json")
+            grounded_slots.append(grounded)
+        design.setdefault("designer_output", {})["slots"] = [slot.model_dump(mode="json") for slot in updated_slots]
+        design["grounder_output"] = {"grounded_slots": grounded_slots}
         design["critic_verdict"] = critique_design(
-            design["room_brief"],
-            design["grounder_output"],
-            catalogue_path=CATALOGUE_PATH,
+            design["room_brief"], design["grounder_output"], catalogue_path=CATALOGUE_PATH,
         ).model_dump(mode="json")
-        assistant_message = "I refreshed every furniture match for this room and will synchronize the image with the corrected catalogue list."
+        design["status"] = "passed" if design["critic_verdict"]["passed"] else "failed"
+        if edits:
+            assistant_message = "I updated the shopping list for your additions and removals, searched the catalogue for added items, and checked sourceability and budget again."
+        else:
+            assistant_message = "I refreshed every furniture match for this room and will synchronize the image with the corrected catalogue list."
     else:
         assistant_message = "I will apply that as a focused visual revision while preserving the room and approved shopping list."
+    design["last_product_update"] = products_changed
     state_store.append_message(session_id, "assistant", assistant_message)
     design["last_revision_request"] = payload.message
     design["chat_messages"] = list(state_store.get(session_id).messages)
@@ -2207,7 +2236,8 @@ def export_design(
         raise typed_error(422, "invalid_revision", "selected design version was not found")
 
     current_selected = [
-        slot["selected_item"] for slot in design["grounder_output"]["grounded_slots"] if slot.get("selected_item")
+        {**slot["selected_item"], "quantity": slot.get("slot", {}).get("quantity", 1)}
+        for slot in design["grounder_output"]["grounded_slots"] if slot.get("selected_item")
     ]
     if selected_revision and selected_revision.get("selected_products"):
         item_index = project_product_index(design)
@@ -2220,7 +2250,7 @@ def export_design(
             selected.append(item)
     else:
         selected = current_selected
-    total_price = sum(int(item["price_inr"]) for item in selected)
+    total_price = sum(int(item["price_inr"]) * int(item.get("quantity", 1)) for item in selected)
     stored_total = int(design["critic_verdict"]["total_price_inr"])
     if not selected_revision and total_price != stored_total:
         raise typed_error(500, "graph_failure", "stored design total does not match selected item prices")

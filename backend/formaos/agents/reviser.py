@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
+from formaos.definitions import CATEGORY_TERMS
 from formaos.agents.critic import CriticVerdict
 from formaos.contracts import DesignSlot, Direction
 from formaos.placement.zones import ZONES
@@ -13,20 +14,6 @@ from formaos.placement.zones import ZONES
 ZONE_PATTERN = re.compile(r"\bin\s+((?:NW|NE|SW|SE|N|S|E|W|C)(?:,\s*(?:NW|NE|SW|SE|N|S|E|W|C))*)\b")
 WIDTH_PATTERN = re.compile(r"width\s+[0-9.]+\s+cm\s+exceeds\s+([0-9.]+)\s+cm\s+for\s+([a-zA-Z0-9_]+)")
 DEPTH_PATTERN = re.compile(r"depth\s+[0-9.]+\s+cm\s+exceeds\s+([0-9.]+)\s+cm\s+for\s+([a-zA-Z0-9_]+)")
-CATEGORY_TERMS = {
-    "bed": {"bed"},
-    "storage": {"storage", "wardrobe", "cabinet"},
-    "cabinet": {"cabinet"},
-    "sofa": {"sofa", "loveseat", "seating"},
-    "loveseat": {"loveseat"},
-    "table": {"table"},
-    "rug": {"rug"},
-    "lamp": {"lamp", "lighting"},
-    "desk": {"desk"},
-    "chair": {"chair"},
-    "mirror": {"mirror"},
-    "planter": {"planter"},
-}
 
 
 class ReviserValidationError(ValueError):

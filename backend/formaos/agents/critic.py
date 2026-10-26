@@ -10,6 +10,7 @@ import rich
 
 from formaos.agents.grounder import DEFAULT_CATALOGUE_PATH, GrounderOutput
 from formaos.contracts import CatalogueItem, CheckStatus, RoomBrief
+from formaos.placement.spatial import room_capacity_notes
 from formaos.vastu.checker import VastuCheckResult, check_vastu
 
 
@@ -135,7 +136,14 @@ def critique_design(
 
     items = selected_items(valid_grounded)
     fit = check_fit(valid_grounded)
-    budget, total_price = check_budget(valid_brief, items)
+    capacity_notes = room_capacity_notes(valid_brief, valid_grounded.grounded_slots)
+    if capacity_notes:
+        fit = CriticCheckResult(name="fit", status=CheckStatus.FAIL, notes=[*fit.notes, *capacity_notes])
+    else:
+        fit.notes.append("Room-envelope and combined floor-area screening completed; exact positions, collisions and door swings are not yet validated.")
+    budget_items = [slot.selected_item for slot in valid_grounded.grounded_slots
+                    if slot.selected_item is not None for _ in range(slot.slot.quantity)]
+    budget, total_price = check_budget(valid_brief, budget_items)
     sourceability = check_sourceability(valid_grounded, catalogue_ids)
     vastu, vastu_result = check_vastu_if_requested(valid_brief, items)
     checks = [fit, budget, sourceability, vastu]

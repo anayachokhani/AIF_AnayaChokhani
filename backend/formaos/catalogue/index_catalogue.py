@@ -8,6 +8,7 @@ import math
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 import rich
 import chromadb
@@ -129,14 +130,22 @@ def metadata_passes(
     max_width_cm: float | None,
     max_depth_cm: float | None,
     max_price_inr: int | None,
+    max_height_cm: float | None = None,
 ) -> bool:
     if category and item.get("category") != category:
+        return False
+    try:
+        if any(not math.isfinite(float(item[field])) or float(item[field]) <= 0 for field in ("width_cm", "depth_cm")):
+            return False
+    except (KeyError, TypeError, ValueError):
         return False
     if max_width_cm is not None and float(item.get("width_cm", 0)) > max_width_cm:
         return False
     if max_depth_cm is not None and float(item.get("depth_cm", 0)) > max_depth_cm:
         return False
     if max_price_inr is not None and int(item.get("price_inr", 0)) > max_price_inr:
+        return False
+    if max_height_cm is not None and (item.get("height_cm") is None or float(item["height_cm"]) > max_height_cm):
         return False
     return True
 
@@ -149,6 +158,7 @@ def search_items(
     max_price_inr: int | None = None,
     k: int = 5,
     chroma_path: Path = Path("data/vectorstores/chroma"),
+    max_height_cm: float | None = None,
 ) -> list[dict[str, object]]:
     client = client_for(chroma_path)
     # collection = client.get_collection(COLLECTION_NAME, embedding_function=HashingEmbeddingFunction())
@@ -159,7 +169,14 @@ def search_items(
         rich.print(f"DEBUG k\n{k = }")
         return []
     candidate_count = min(count, max(SEMANTIC_CANDIDATE_LIMIT, k * 8, k))
-    results = collection.query(query_texts=[query], n_results=candidate_count)
+    query_options: dict[str, Any] = {}
+    filters = [{"category": category}] if category else []
+    for field, limit in (("width_cm", max_width_cm), ("depth_cm", max_depth_cm), ("height_cm", max_height_cm), ("price_inr", max_price_inr)):
+        if limit is not None:
+            filters.append({field: {"$lte": limit}})
+    if filters:
+        query_options["where"] = filters[0] if len(filters) == 1 else {"$and": filters}
+    results = collection.query(query_texts=[query], n_results=candidate_count, **query_options)
     metadatas = results.get("metadatas", [[]])[0]
     distances = results.get("distances", [[]])[0]
     output: list[dict[str, object]] = []
@@ -168,7 +185,7 @@ def search_items(
     # rich.print(f"DEBUG DISTANCES\n{len(distances) = }")
     # rich.print(f"DEBUG DISTANCES\n{distances = }")
     for metadata, distance in zip(metadatas, distances):
-        if metadata_passes(metadata, category, max_width_cm, max_depth_cm, max_price_inr):
+        if metadata_passes(metadata, category, max_width_cm, max_depth_cm, max_price_inr, max_height_cm):
             output.append({**metadata, "distance": distance})
         if len(output) >= k:
             break

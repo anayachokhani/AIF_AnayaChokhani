@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
+from formaos.room_dimensions import validate_room_dimensions
 
 
 Direction = Literal["N", "NE", "E", "SE", "S", "SW", "W", "NW", "C"]
@@ -36,6 +37,7 @@ class RoomBrief(BaseModel):
     width: float = Field(..., gt=0)
     depth: float = Field(..., gt=0)
     units: Units
+    height: float | None = Field(default=None, gt=0)
     budget_inr: int = Field(..., gt=0)
     style_words: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
@@ -43,13 +45,9 @@ class RoomBrief(BaseModel):
     main_door_direction: Direction | None = None
     compass_direction: Direction | None = None
 
-    #### Need to change this and the UI for selecting this
     @model_validator(mode="after")
     def dimensions_are_reasonable(self) -> "RoomBrief":
-        if self.units == Units.FT and (self.width > 80 or self.depth > 80):
-            raise ValueError("room dimensions in feet look too large")
-        if self.units == Units.CM and (self.width < 100 or self.depth < 100):
-            raise ValueError("room dimensions in centimeters look too small")
+        validate_room_dimensions(self.room_type, self.width, self.depth, self.units.value, self.height)
         return self
 
 

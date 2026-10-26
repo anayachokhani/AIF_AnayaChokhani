@@ -1,0 +1,13 @@
+{
+  "source": "https://www.beeindia.gov.in/sites/default/files/MODEL%20BUILDING%20BYE%20LAWS-2016.pdf",
+  "note": "Application planning limits based on model bye-law room sizes, not a local building approval check. Bathroom means combined bath/WC; bedroom and study use the secondary habitable-room allowance. Dining uses the main habitable-room baseline.",
+  "maxSideCm": 2438.4,
+  "rooms": {
+    "living_room": { "minSideCm": 240, "minAreaM2": 9.5, "minHeightCm": 275 },
+    "bedroom": { "minSideCm": 210, "minAreaM2": 7.5, "minHeightCm": 275 },
+    "study": { "minSideCm": 210, "minAreaM2": 7.5, "minHeightCm": 275 },
+    "kitchen": { "minSideCm": 180, "minAreaM2": 5, "minHeightCm": 275 },
+    "bathroom": { "minSideCm": 120, "minAreaM2": 2.8, "minHeightCm": 210 },
+    "dining_room": { "minSideCm": 240, "minAreaM2": 9.5, "minHeightCm": 275 }
+  }
+}
