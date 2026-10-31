@@ -25,7 +25,7 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
@@ -33,3 +33,6 @@ line-length = 100
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[tool.uv]
+link-mode = "copy"

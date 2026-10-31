@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.tools
 /.venv
 /.uv-cache
@@ -12,6 +12,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+frontend/node_modules
+frontend/.next
 
 # testing
 /coverage
@@ -40,16 +42,17 @@ yarn-error.log*
 
 # local data and generated artifacts
 /.formaos-data/
-/data/raw/
-/data/external/
-/data/vectorstores/
-/data/saved_designs/
-/artifacts/demo/*.mp4
-/artifacts/demo/*.mov
-/artifacts/demo/*.webm
-/artifacts/demo/screenshots/
-/artifacts/metrics/raw/
-/artifacts/generated/
+backend/data/
+backend/data/raw/
+backend/data/external/
+backend/data/vectorstores/
+backend/data/saved_designs/
+backend/artifacts/demo/*.mp4
+backend/artifacts/demo/*.mov
+backend/artifacts/demo/*.webm
+backend/artifacts/demo/screenshots/
+backend/artifacts/metrics/raw/
+backend/artifacts/generated/
 
 # vercel
 .vercel

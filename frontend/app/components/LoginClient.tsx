@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const API_BASE = process.env.BACKEND_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
 type AuthMode = "login" | "signup";
 

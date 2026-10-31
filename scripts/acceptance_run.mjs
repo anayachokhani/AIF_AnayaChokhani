@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
 
-const backendBase = process.env.FORMAOS_BACKEND_URL ?? "http://127.0.0.1:8000";
-const frontendBase = process.env.FORMAOS_FRONTEND_URL ?? "http://localhost:3000";
-const cdpBase = process.env.FORMAOS_CHROME_CDP_URL ?? "http://127.0.0.1:9222";
+const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8000";
+const frontendBase = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "http://localhost:3000";
+const cdpBase = process.env.CHROME_CDP_URL ?? "http://127.0.0.1:9222";
 const outputDir = "artifacts/demo";
 
 const demoBrief = {
