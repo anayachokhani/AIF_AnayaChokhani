@@ -62,7 +62,7 @@ use `npm run dev` for local app development.
 
 ```bash
 uv sync
-uvicorn formaos.api.main:app --app-dir backend --reload
+uv run uvicorn formaos.api.main:app --app-dir backend --reload
 ```
 
 For the deterministic local demo flow without OpenRouter/API spend:
